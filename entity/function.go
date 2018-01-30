@@ -81,6 +81,7 @@ func (f Function) Build(root string) error {
 		os.Environ(),
 		fmt.Sprintf("GOPATH=%s:%s", os.Getenv("GOPATH"), filepath.Join(root, "vendors")),
 	)
+	fmt.Println(cmd)
 	cmd.Stdout = os.Stdout
 	return cmd.Run()
 }

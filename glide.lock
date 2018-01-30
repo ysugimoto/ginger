@@ -1,5 +1,5 @@
 hash: 3441bf6ff6d443d7e65fcdfc4f1d1b67e506cee012ed3b4901bbe2aab9890aa9
-updated: 2018-01-30T19:27:13.508478317+09:00
+updated: 2018-01-31T01:46:16.205266687+09:00
 imports:
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
@@ -10,9 +10,9 @@ imports:
 - name: github.com/mattn/go-colorable
   version: 6cc8b475d4682021d75d2cbe2bc481bec4ce98e5
 - name: github.com/mattn/go-isatty
-  version: 0360b2af4f38e8d38c7fce2a9f4e702702d73a39
+  version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
 - name: github.com/mattn/go-runewidth
-  version: 9e777a8366cce605130a531d2cd6363d07ad7317
+  version: 97311d9f7767e3d6f422ea06661bc2c7a19e8a5d
 - name: github.com/mattn/go-tty
   version: 3d41f42f6006f9962ca920c318f5db179fd0884c
 - name: github.com/ysugimoto/cho

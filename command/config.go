@@ -46,7 +46,7 @@ func (c *Config) addFunc(fn entity.Function) {
 }
 
 func (c *Config) write() {
-	fp, _ := os.OpenFile(filepath.Join(c.Root, ".ginger"), os.O_WRONLY, 0644)
+	fp, _ := os.OpenFile(filepath.Join(c.Root, ".ginger"), os.O_WRONLY|os.O_CREATE, 0644)
 	enc := toml.NewEncoder(fp)
 	enc.Encode(c)
 }

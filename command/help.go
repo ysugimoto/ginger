@@ -1,8 +1,6 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/ysugimoto/go-args"
 )
 
@@ -15,6 +13,10 @@ func NewHelp() *Help {
 }
 
 func (h *Help) Run(ctx *args.Context) error {
+	return nil
+}
+
+func (h *Help) Help() string {
 	help := `=================================================
  ginger: Go runtime lambda function framework
 =================================================
@@ -28,6 +30,5 @@ SubCommands:
 Options:
   -h, --help: Show help`
 
-	fmt.Println(help)
-	return nil
+	return help
 }

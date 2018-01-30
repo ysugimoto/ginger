@@ -36,7 +36,7 @@ func main() {
 	}
 
 	if ctx.Has("help") {
-		cmd.Help()
+		fmt.Println(cmd.Help())
 	} else if err := cmd.Run(ctx); err != nil {
 		fmt.Printf("Command %s failed: %s\n", ctx.At(0), err.Error())
 	}
