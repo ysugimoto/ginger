@@ -1,0 +1,26 @@
+hash: 3441bf6ff6d443d7e65fcdfc4f1d1b67e506cee012ed3b4901bbe2aab9890aa9
+updated: 2018-01-30T19:27:13.508478317+09:00
+imports:
+- name: github.com/BurntSushi/toml
+  version: b26d9c308763d68093482582cea63d69be07a0f0
+- name: github.com/iancoleman/strcase
+  version: 3de563c3dc08a7504131e9d63f678b7d1c3e85d7
+- name: github.com/k0kubun/pp
+  version: e057ee7a28277be4d2af303443b6da377768181f
+- name: github.com/mattn/go-colorable
+  version: 6cc8b475d4682021d75d2cbe2bc481bec4ce98e5
+- name: github.com/mattn/go-isatty
+  version: 0360b2af4f38e8d38c7fce2a9f4e702702d73a39
+- name: github.com/mattn/go-runewidth
+  version: 9e777a8366cce605130a531d2cd6363d07ad7317
+- name: github.com/mattn/go-tty
+  version: 3d41f42f6006f9962ca920c318f5db179fd0884c
+- name: github.com/ysugimoto/cho
+  version: 632f8dafec3b37756dc65a828d5bdf2d88523870
+- name: github.com/ysugimoto/go-args
+  version: 95e6aae54c31c3d7a5ce7996f871a6776320e40d
+- name: golang.org/x/sys
+  version: 3dbebcf8efb6a5011a60c2b4591c1022a759af8a
+  subpackages:
+  - unix
+testImports: []
