@@ -31,7 +31,7 @@ func main() {
 func bindTemplate(name string, apiGateway *APIGateway) []byte {
 	binds := []interface{}{}
 	if apiGateway != nil {
-		binds = append(binds, `\n\t"github.com/aws/aws-lambda/go/events"`)
+		binds = append(binds, "\n\t\"github.com/aws/aws-lambda-go/events\"")
 	} else {
 		binds = append(binds, "")
 	}
@@ -40,10 +40,10 @@ func bindTemplate(name string, apiGateway *APIGateway) []byte {
 		binds = append(binds,
 			"request events.APIGatewayProxyRequest",
 			"events.APIGatewayProxyResponse",
-			"events.APIGatewayProxyResponse{}",
+			"events.APIGatewayProxyResponse{}, nil",
 		)
 	} else {
-		binds = append(binds, "request string", "string", `"Response here"`)
+		binds = append(binds, "request string", "string", `"Response here", nil`)
 	}
 	binds = append(binds, strcase.ToCamel(name))
 	return []byte(fmt.Sprintf(MAIN_FUNCTION_TEMPLATE, binds...))
@@ -69,19 +69,17 @@ func (f Function) Save(root string) error {
 	return nil
 }
 
-func (f Function) Build(root string) error {
+func (f Function) Build(root string, env []string) error {
 	cmdArgs := []string{
 		"build",
 		"-o",
 		f.Name,
 	}
+
 	cmd := exec.Command("go", cmdArgs...)
 	cmd.Dir = filepath.Join(root, f.Name)
-	cmd.Env = append(
-		os.Environ(),
-		fmt.Sprintf("GOPATH=%s:%s", os.Getenv("GOPATH"), filepath.Join(root, "vendors")),
-	)
-	fmt.Println(cmd)
+	cmd.Env = env
 	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }

@@ -17,6 +17,8 @@ func main() {
 	switch ctx.At(0) {
 	case command.INIT:
 		cmd = command.NewInit()
+	case command.INSTALL:
+		cmd = command.NewInstall()
 	case command.CONFIG:
 		cmd = command.NewConfig()
 	case command.CREATE:
