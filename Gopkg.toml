@@ -23,7 +23,9 @@
 #   non-go = false
 #   go-tests = true
 #   unused-packages = true
+#
 
+required = ["github.com/jteeuwen/go-bindata"]
 
 [[constraint]]
   name = "github.com/BurntSushi/toml"
@@ -48,3 +50,7 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  name = "github.com/aws/aws-sdk-go"
+  version = "1.12.70"

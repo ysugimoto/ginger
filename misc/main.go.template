@@ -1,0 +1,16 @@
+package main
+
+import (
+    "context"
+
+	"github.com/aws/aws-lambda-go/lambda"%s
+	"github.com/aws/aws-sdk-go"
+)
+
+func %sHandler(ctx context.Context, %s) %s {
+	return %s
+}
+
+func main() {
+	lambda.Start(%sHandler)
+}

@@ -19,13 +19,14 @@ func main() {
 		cmd = command.NewInit()
 	case command.INSTALL:
 		cmd = command.NewInstall()
-	case command.CONFIG:
-		cmd = command.NewConfig()
-	case command.CREATE:
-		cmd = command.NewCreate()
-	case command.BUILD:
-		cmd = command.NewBuild()
-
+	case command.FUNCTION, command.FN:
+		cmd = command.NewFunction()
+	case command.DEPLOY:
+		cmd = command.NewDeploy()
+	// case command.API:
+	// 	cmd = command.NewAPI()
+	// case command.BUILD:
+	// 	cmd = command.NewBuild()
 	default:
 		if ctx.Len() == 0 {
 			cmd = command.NewHelp()
