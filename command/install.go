@@ -1,9 +1,12 @@
 package command
 
 import (
+	"os"
 	"sync"
 
+	"io/ioutil"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/ysugimoto/ginger/config"
 	"github.com/ysugimoto/ginger/logger"
@@ -12,7 +15,6 @@ import (
 
 var dependencyPackages = []string{
 	"github.com/aws/aws-lambda-go",
-	"github.com/aws/aws-sdk-go",
 }
 
 type Install struct {
@@ -32,18 +34,43 @@ func (i *Install) Run(ctx *args.Context) (err error) {
 		i.log.Error("Configuration file could not load. Run `ginger init` before.")
 		return nil
 	}
+	i.log.Print("Install function dependencies.")
 	var wg sync.WaitGroup
+	tmpDir, _ := ioutil.TempDir("", "ginger-tmp-packages")
+	defer os.RemoveAll(tmpDir)
 	for _, pkg := range dependencyPackages {
 		wg.Add(1)
-		go i.installDependencies(pkg, &wg)
+		i.log.Printf("Installing %s...\n", pkg)
+		go i.installDependencies(pkg, tmpDir, &wg)
 	}
 	wg.Wait()
+	// Recursive copy
+	if err := i.movePackages(filepath.Join(tmpDir, "src"), c.VendorPath); err != nil {
+		i.log.Errorf("Failed to move packages: %s\n", err)
+	}
 	return nil
 }
 
-func (i *Install) installDependencies(pkg string, wg *sync.WaitGroup) {
+func (i *Install) installDependencies(pkg, tmpDir string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	cmd := exec.Command("go", "get", pkg)
-	cmd.Env = buildEnv
+	cmd.Env = buildEnv(map[string]string{
+		"GOPATH": tmpDir,
+	})
 	cmd.Run()
+}
+
+func (i *Install) movePackages(src, dest string) error {
+	items, err := ioutil.ReadDir(src)
+	if err != nil {
+		return err
+	}
+	for _, item := range items {
+		from := filepath.Join(src, item.Name())
+		to := filepath.Join(dest, item.Name())
+		if err := os.Rename(from, to); err != nil {
+			return err
+		}
+	}
+	return nil
 }

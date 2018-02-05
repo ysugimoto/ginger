@@ -54,6 +54,9 @@ func (d *Deploy) Run(ctx *args.Context) error {
 	}
 	switch ctx.At(1) {
 	case DEPLOY_FUNCTION, DEPLOY_FN:
+		if c.Project.LambdaExecutionRole == "" {
+			d.log.Warn("Lambda execution role isn't set. Please open Ginger.toml ant put sutable role into 'lambda_execution_role' section.")
+		}
 		d.log.AddNamespace("function")
 		return d.deployFunction(c, ctx)
 	case DEPLOY_API:
@@ -93,27 +96,44 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 	binaries := builder.build(targets)
 
 	// Deploy to AWS
-	lambda := request.NewLambda()
+	lambda := request.NewLambda(c)
 	for fn, binary := range binaries {
-		// Create zip buffer
-		buf := new(bytes.Buffer)
-		z := zip.NewWriter(buf)
-		bin, _ := ioutil.ReadFile(binary)
-		if file, err := z.Create(fn.Name); err != nil {
-			return err
-		} else if _, err := file.Write(bin); err != nil {
-			return err
+		d.log.Printf("Archiving zip for %s...\n", fn.Name)
+		buffer, err := d.archive(fn, binary)
+		if err != nil {
+			d.log.Errorf("Archive error for %s: %s", fn.Name, err.Error())
+			continue
 		}
-		if err := z.Close(); err != nil {
-			return err
-		}
-
-		if err := lambda.DeployFunction(fn.Name, buf.Bytes()); err != nil {
-			d.log.Error("Failed to deploy function", err)
+		ioutil.WriteFile("/tmp/gf.zip", buffer, 0644)
+		d.log.Printf("Deploying function %s to AWS Lambda...\n", fn.Name)
+		if err := lambda.DeployFunction(fn.Name, buffer); err == nil {
+			d.log.Infof("Function %s deployed successfully!\n", fn.Name)
 		}
 	}
-	d.log.Infof("Function deployed successfully! %d functions has deployed", len(binaries))
 	return nil
+}
+
+func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	z := zip.NewWriter(buf)
+	bin, err := ioutil.ReadFile(binPath)
+	if err != nil {
+		return nil, err
+	}
+	header := &zip.FileHeader{
+		Name:           fn.Name,
+		Method:         zip.Deflate,
+		ExternalAttrs:  0777 << 16,
+		CreatorVersion: 3 << 8,
+	}
+	if f, err := z.CreateHeader(header); err != nil {
+		return nil, err
+	} else if _, err := f.Write(bin); err != nil {
+		return nil, err
+	} else if err := z.Close(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) error {

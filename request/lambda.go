@@ -3,20 +3,30 @@ package request
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
+	"github.com/ysugimoto/ginger/config"
 	"github.com/ysugimoto/ginger/logger"
 )
 
 type LambdaRequest struct {
-	svc *lambda.Lambda
-	log *logger.Logger
+	svc    *lambda.Lambda
+	log    *logger.Logger
+	config *config.Config
 }
 
-func NewLambda() *LambdaRequest {
+func NewLambda(c *config.Config) *LambdaRequest {
+	conf := aws.NewConfig().WithRegion(c.Project.Region)
+	if c.Project.Profile != "" {
+		conf = conf.WithCredentials(
+			credentials.NewSharedCredentials("", c.Project.Profile),
+		)
+	}
 	return &LambdaRequest{
-		svc: lambda.New(session.New()),
-		log: logger.WithNamespace("ginger.request.lambda"),
+		config: c,
+		svc:    lambda.New(session.New(), conf),
+		log:    logger.WithNamespace("ginger.request.lambda"),
 	}
 }
 
@@ -78,8 +88,10 @@ func (l *LambdaRequest) DeleteFunction(name string) error {
 
 func (l *LambdaRequest) DeployFunction(name string, zipBytes []byte) error {
 	if l.FunctionExists(name) {
+		l.log.Printf("%s already exists, update fucntion\n", name)
 		return l.UpdateFunction(name, zipBytes)
 	} else {
+		l.log.Printf("Creating new function %s\n", name)
 		return l.CreateFunction(name, zipBytes)
 	}
 }
@@ -91,6 +103,7 @@ func (l *LambdaRequest) CreateFunction(name string, zipBytes []byte) error {
 		},
 		FunctionName: aws.String(name),
 		Handler:      aws.String(name),
+		Role:         aws.String(l.config.Project.LambdaExecutionRole),
 		MemorySize:   aws.Int64(256),
 		Publish:      aws.Bool(true),
 		Runtime:      aws.String("go1.x"),

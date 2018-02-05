@@ -69,7 +69,7 @@ func (f *Function) Run(ctx *args.Context) error {
 }
 
 func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
-	name := ctx.At(1)
+	name := ctx.String("name")
 	if name == "" {
 		f.log.Error("Function name didn't supplied. Run with --name option.")
 		return nil
@@ -138,7 +138,7 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 }
 
 func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
-	name := ctx.At(1)
+	name := ctx.String("name")
 	if name == "" {
 		f.log.Error("Function name didn't supplied. Run with --name option.")
 		return nil
@@ -146,7 +146,9 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 		f.log.Error("Function not defined.")
 		return nil
 	}
-	lambda := request.NewLambda()
+	f.log.Printf("Deleting function: %s\n", name)
+	lambda := request.NewLambda(c)
+	f.log.Print("Checking lambda function exintence...")
 	if lambda.FunctionExists(name) {
 		if input.Bool("Function exists on AWS. Also delete from there?") {
 			if err := lambda.DeleteFunction(name); err != nil {
@@ -154,9 +156,13 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 			}
 		}
 	}
+	f.log.Printf("Deleting files...")
 	if err := os.RemoveAll(filepath.Join(c.FunctionPath, name)); err != nil {
 		f.log.Errorf("Delete dierectory error: %s", err)
 	}
+	c.Functions = c.Functions.Remove(name)
+	c.Write()
+	f.log.Infof("Function deleted successfully.")
 	return nil
 }
 

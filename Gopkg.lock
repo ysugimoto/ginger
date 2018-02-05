@@ -86,7 +86,7 @@
   branch = "master"
   name = "github.com/mattn/go-tty"
   packages = ["."]
-  revision = "3d41f42f6006f9962ca920c318f5db179fd0884c"
+  revision = "3f2ec5c5d422363dc174b78b1615415fef224055"
 
 [[projects]]
   branch = "master"
@@ -98,7 +98,7 @@
   branch = "master"
   name = "github.com/ysugimoto/go-args"
   packages = ["."]
-  revision = "95e6aae54c31c3d7a5ce7996f871a6776320e40d"
+  revision = "233b0a57bd4428f93c4dfbefe5e6606ecc8bdddf"
 
 [[projects]]
   branch = "master"
@@ -109,6 +109,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d7f73b9c989bdf1f9ff747b119ead4fca14009d198844e042375ce6e4f14daad"
+  inputs-digest = "e47a79d829a9b0859e6d9c7c21de52f2038d6ab0bcfd34fcec2cdf679b6d94cd"
   solver-name = "gps-cdcl"
   solver-version = 1

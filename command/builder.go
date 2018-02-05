@@ -1,36 +1,17 @@
 package command
 
 import (
-	"fmt"
+	"bytes"
+	"errors"
 	"os"
-	"strings"
 	"sync"
 
 	"os/exec"
 	"path/filepath"
 
 	"github.com/ysugimoto/ginger/entity"
+	"github.com/ysugimoto/ginger/logger"
 )
-
-var buildEnv []string
-
-func init() {
-	cwd, _ := os.Getwd()
-	vendorPath := filepath.Join(cwd, "vendor")
-
-	var found bool
-	for _, e := range os.Environ() {
-		if strings.HasPrefix(e, "GOPATH=") {
-			found = true
-			buildEnv = append(buildEnv, fmt.Sprintf("%s:%s", e, vendorPath))
-		} else {
-			buildEnv = append(buildEnv, e)
-		}
-	}
-	if !found {
-		buildEnv = append(buildEnv, fmt.Sprintf("GOPATH=%s", vendorPath))
-	}
-}
 
 type builder struct {
 	src  string
@@ -45,26 +26,31 @@ func newBuilder(src, dest string) *builder {
 }
 
 func (b *builder) build(targets entity.Functions) map[*entity.Function]string {
+	log := logger.WithNamespace("ginger.build")
 	binaries := make(map[*entity.Function]string)
 	var wg sync.WaitGroup
-	var mu sync.Mutex
+	// var mu sync.Mutex
 	for _, fn := range targets {
 		wg.Add(1)
+		log.Printf("Building function: %s...\n", fn.Name)
 		bin := make(chan string)
 		err := make(chan error)
-		go b.compile(fn.Name, bin, err, &wg)
+		go b.compile(fn.Name, bin, err)
 		go func() {
 			defer func() {
+				wg.Done()
 				close(bin)
 				close(err)
 			}()
 			select {
-			case <-err:
+			case e := <-err:
+				log.Errorf("Failed to build function: %s\n", e.Error())
 				return
 			case binary := <-bin:
-				mu.Lock()
+				log.Infof("Function build successfully: %s:%s\n", fn.Name, binary)
+				// mu.Lock()
 				binaries[fn] = binary
-				mu.Unlock()
+				// mu.Unlock()
 			}
 		}()
 	}
@@ -72,19 +58,22 @@ func (b *builder) build(targets entity.Functions) map[*entity.Function]string {
 	return binaries
 }
 
-func (b *builder) compile(name string, binChan chan string, errChan chan error, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (b *builder) compile(name string, binChan chan string, errChan chan error) {
+	buffer := new(bytes.Buffer)
 	out := filepath.Join(b.dest, name)
 	src := filepath.Join(b.src, name)
 
 	cmd := exec.Command("go", "build", "-o", out)
 	cmd.Dir = src
-	cmd.Env = buildEnv
+	cmd.Env = buildEnv(map[string]string{
+		"GOOS":   "linux",
+		"GOARCH": "amd64",
+	})
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = buffer
 	if err := cmd.Run(); err != nil {
-		errChan <- err
+		errChan <- errors.New(string(buffer.Bytes()))
 	} else {
-		binChan <- src
+		binChan <- out
 	}
 }

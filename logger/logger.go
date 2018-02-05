@@ -53,3 +53,11 @@ func (l *Logger) Error(message ...interface{}) {
 func (l *Logger) Errorf(format string, args ...interface{}) {
 	fmt.Fprintf(stdout, red+"["+l.ns+":ERROR] "+format+reset, args...)
 }
+
+func (l *Logger) Print(message ...interface{}) {
+	fmt.Fprintln(stdout, "["+l.ns+"] "+fmt.Sprint(message...))
+}
+
+func (l *Logger) Printf(format string, args ...interface{}) {
+	fmt.Fprintf(stdout, "["+l.ns+"] "+format, args...)
+}

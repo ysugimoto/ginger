@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -28,40 +27,58 @@ func NewInit() *Init {
 func (i *Init) Run(ctx *args.Context) (err error) {
 	c := config.Load()
 	if c.Exists() {
-		i.log.Info("Config file found. Project has already initialized.")
+		i.log.Warn("Config file found. Project has already initialized.")
 		return nil
 	}
 	if _, err := os.Stat(c.FunctionPath); err != nil {
+		i.log.Printf("Create functions directory: %s\n", c.FunctionPath)
 		os.Mkdir(c.FunctionPath, 0755)
 	}
 	if _, err := os.Stat(c.APIPath); err != nil {
+		i.log.Printf("Create API directory: %s\n", c.APIPath)
 		os.Mkdir(c.APIPath, 0755)
 	}
 	if _, err := os.Stat(c.VendorPath); err != nil {
+		i.log.Printf("Create vendor directory: %s\n", c.VendorPath)
 		os.Mkdir(c.VendorPath, 0755)
 	}
-	var profile string
-	var region string
+	project := entity.Project{
+		Profile:             "",
+		Region:              "us-east-1",
+		LambdaExecutionRole: "",
+	}
 	var sess *session.Session
 	if p := ctx.String("profile"); p != "" {
-		profile = p
+		project.Profile = p
 		creds := credentials.NewSharedCredentials("", p)
 		sess = session.New(aws.NewConfig().WithCredentials(creds))
-		region = *sess.Config.Region
+		if *sess.Config.Region != "" {
+			project.Region = *sess.Config.Region
+		}
 	} else {
-		profile = "default"
 		sess = session.Must(session.NewSession())
-		region = *sess.Config.Region
+		if *sess.Config.Region != "" {
+			project.Region = *sess.Config.Region
+		}
 	}
-	if region == "" {
-		region = "ua-east-1"
+	if r := ctx.String("region"); r != "" {
+		project.Region = r
 	}
-	c.Project = entity.Project{
-		Profile: profile,
-		Region:  region,
+	if r := ctx.String("role"); r != "" {
+		project.LambdaExecutionRole = r
+	} else {
 	}
+
+	i.log.Printf("Region set as %s\n", project.Region)
+	i.log.Printf("Profile set as %s\n", project.Profile)
+	if project.LambdaExecutionRole == "" {
+		i.log.Warn("Lambda Execution Role isn't set. Please add 'lambda_execution_role' field before deploy function.")
+	} else {
+		i.log.Printf("Lambda role set as %s\n", project.LambdaExecutionRole)
+	}
+	c.Project = project
 	c.Write()
 	NewInstall().Run(ctx)
-	fmt.Println("[Init] ginger initalized successfully!")
+	i.log.Info("ginger initalized successfully!")
 	return nil
 }

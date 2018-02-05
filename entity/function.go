@@ -20,6 +20,17 @@ func (f Functions) Find(name string) *Function {
 	return nil
 }
 
+func (f Functions) Remove(name string) Functions {
+	fns := Functions{}
+	for _, fn := range f {
+		if fn.Name == name {
+			continue
+		}
+		fns = append(fns, fn)
+	}
+	return fns
+}
+
 type Function struct {
 	Name string `toml:"name"`
 }

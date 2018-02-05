@@ -13,6 +13,8 @@ func main() {
 		Alias("help", "h", nil).
 		Alias("name", "n", "").
 		Alias("profile", "p", "").
+		Alias("region", "r", "").
+		Alias("role", "", "").
 		Parse(os.Args[1:])
 
 	var cmd command.Command
