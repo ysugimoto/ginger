@@ -11,6 +11,8 @@ import (
 func main() {
 	ctx := args.New().
 		Alias("help", "h", nil).
+		Alias("name", "n", "").
+		Alias("profile", "p", "").
 		Parse(os.Args[1:])
 
 	var cmd command.Command
@@ -23,18 +25,15 @@ func main() {
 		cmd = command.NewFunction()
 	case command.DEPLOY:
 		cmd = command.NewDeploy()
-	// case command.API:
-	// 	cmd = command.NewAPI()
-	// case command.BUILD:
-	// 	cmd = command.NewBuild()
-	default:
-		if ctx.Len() == 0 {
-			cmd = command.NewHelp()
-		}
+		// case command.API:
+		// 	cmd = command.NewAPI()
+		// case command.BUILD:
+		// 	cmd = command.NewBuild()
 	}
 
 	if cmd == nil {
-		fmt.Printf("Command :%s not found. Abort.", ctx.At(0))
+		cmd = command.NewHelp()
+		fmt.Println(cmd.Help())
 		os.Exit(1)
 	}
 

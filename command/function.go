@@ -7,8 +7,10 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/iancoleman/strcase"
 	"github.com/ysugimoto/ginger/assets"
 	"github.com/ysugimoto/ginger/config"
+	"github.com/ysugimoto/ginger/entity"
 	"github.com/ysugimoto/ginger/input"
 	"github.com/ysugimoto/ginger/logger"
 	"github.com/ysugimoto/ginger/request"
@@ -18,6 +20,7 @@ import (
 const (
 	FUNCTION_CREATE = "create"
 	FUNCTION_DELETE = "delete"
+	FUNCTION_INVOKE = "invoke"
 )
 
 type Function struct {
@@ -25,7 +28,7 @@ type Function struct {
 	log *logger.Logger
 }
 
-func NewFunction() {
+func NewFunction() *Function {
 	return &Function{
 		log: logger.WithNamespace("ginger.function"),
 	}
@@ -45,8 +48,8 @@ Options:
 }
 
 func (f *Function) Run(ctx *args.Context) error {
-	c, err := config.Load()
-	if err != nil || !c.Exists() {
+	c := config.Load()
+	if !c.Exists() {
 		f.log.Error("Configuration file could not load. Run `ginger init` before.")
 		return nil
 	}
@@ -57,8 +60,8 @@ func (f *Function) Run(ctx *args.Context) error {
 		return f.deleteFunction(c, ctx)
 	case FUNCTION_INVOKE:
 		return f.invokeFunction(c, ctx)
-	case FUNCTION_UPDATE:
-		return f.updateFunction(c, ctx)
+	// case FUNCTION_UPDATE:
+	// 	return f.updateFunction(c, ctx)
 	default:
 		fmt.Println(f.Help())
 		return nil
@@ -83,7 +86,7 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 		return nil
 	}
 	err := ioutil.WriteFile(
-		filepath.Join(fnPahth, "main.go"),
+		filepath.Join(c.FunctionPath, name, "main.go"),
 		f.buildTemplate(name, ctx.String("event")),
 		0644,
 	)
@@ -131,7 +134,7 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 			strcase.ToCamel(name),
 		)
 	}
-	return []byte(fmt.Sprintf(tmpl, binds...))
+	return []byte(fmt.Sprintf(string(tmpl), binds...))
 }
 
 func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
@@ -143,7 +146,6 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 		f.log.Error("Function not defined.")
 		return nil
 	}
-	fn := c.Functions.Find(name)
 	lambda := request.NewLambda()
 	if lambda.FunctionExists(name) {
 		if input.Bool("Function exists on AWS. Also delete from there?") {
@@ -155,5 +157,9 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 	if err := os.RemoveAll(filepath.Join(c.FunctionPath, name)); err != nil {
 		f.log.Errorf("Delete dierectory error: %s", err)
 	}
+	return nil
+}
+
+func (f *Function) invokeFunction(c *config.Config, ctx *args.Context) error {
 	return nil
 }

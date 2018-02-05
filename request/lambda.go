@@ -13,7 +13,7 @@ type LambdaRequest struct {
 	log *logger.Logger
 }
 
-func NewLamba() *LambdaRequest {
+func NewLambda() *LambdaRequest {
 	return &LambdaRequest{
 		svc: lambda.New(session.New()),
 		log: logger.WithNamespace("ginger.request.lambda"),

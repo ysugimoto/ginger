@@ -37,10 +37,6 @@ required = ["github.com/jteeuwen/go-bindata"]
 
 [[constraint]]
   branch = "master"
-  name = "github.com/k0kubun/pp"
-
-[[constraint]]
-  branch = "master"
   name = "github.com/ysugimoto/cho"
 
 [[constraint]]

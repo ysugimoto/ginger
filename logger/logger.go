@@ -31,25 +31,25 @@ func (l *Logger) AddNamespace(ns string) {
 }
 
 func (l *Logger) Info(message ...interface{}) {
-	fmt.Fprintln(stdout, green+"["+l.ns+":INFO]"+fmt.Sprint(message)+reset)
+	fmt.Fprintln(stdout, green+"["+l.ns+":INFO] "+fmt.Sprint(message...)+reset)
 }
 
 func (l *Logger) Infof(format string, args ...interface{}) {
-	fmt.Fprintf(stdout, green+"["+l.ns+":INFO]"+format+reset, args...)
+	fmt.Fprintf(stdout, green+"["+l.ns+":INFO] "+format+reset, args...)
 }
 
 func (l *Logger) Warn(message ...interface{}) {
-	fmt.Fprintln(stdout, yellow+"["+l.ns+":WARN]"+fmt.Sprint(message)+reset)
+	fmt.Fprintln(stdout, yellow+"["+l.ns+":WARN] "+fmt.Sprint(message...)+reset)
 }
 
 func (l *Logger) Warnf(format string, args ...interface{}) {
-	fmt.Fprintf(stdout, yellow+"["+l.ns+":WARN]"+format+reset, args...)
+	fmt.Fprintf(stdout, yellow+"["+l.ns+":WARN] "+format+reset, args...)
 }
 
 func (l *Logger) Error(message ...interface{}) {
-	fmt.Fprintln(stdout, red+"["+l.ns+":ERROR]"+fmt.Sprint(message)+reset)
+	fmt.Fprintln(stdout, red+"["+l.ns+":ERROR] "+fmt.Sprint(message...)+reset)
 }
 
 func (l *Logger) Errorf(format string, args ...interface{}) {
-	fmt.Fprintf(stdout, red+"["+l.ns+":ERROR]"+format+reset, args...)
+	fmt.Fprintf(stdout, red+"["+l.ns+":ERROR] "+format+reset, args...)
 }

@@ -59,10 +59,10 @@
   revision = "0b12d6b5"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/k0kubun/pp"
+  name = "github.com/jteeuwen/go-bindata"
   packages = ["."]
-  revision = "e057ee7a28277be4d2af303443b6da377768181f"
+  revision = "bbd0c6e271208dce66d8fda4bc536453cd27fc4a"
+  version = "v3.0.7"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -109,6 +109,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c16e60ea43bba0c80859bca1c7c0bc9ca6141ed1d6236abe3f2f655e809abc08"
+  inputs-digest = "d7f73b9c989bdf1f9ff747b119ead4fca14009d198844e042375ce6e4f14daad"
   solver-name = "gps-cdcl"
   solver-version = 1

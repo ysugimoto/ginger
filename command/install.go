@@ -1,13 +1,12 @@
 package command
 
 import (
-	"fmt"
-	"os"
 	"sync"
 
 	"os/exec"
-	"path/filepath"
 
+	"github.com/ysugimoto/ginger/config"
+	"github.com/ysugimoto/ginger/logger"
 	"github.com/ysugimoto/go-args"
 )
 
@@ -18,25 +17,24 @@ var dependencyPackages = []string{
 
 type Install struct {
 	Command
-	conf *Config
+	log *logger.Logger
 }
 
 func NewInstall() *Install {
 	return &Install{
-		conf: NewConfig(),
+		log: logger.WithNamespace("ginger.install"),
 	}
 }
 
 func (i *Install) Run(ctx *args.Context) (err error) {
-	fmt.Println("[Install] Install vendor libraries.")
-	vendor := filepath.Join(i.conf.Root, "vendor")
-	if _, err := os.Stat(vendor); err != nil {
-		os.Mkdir(vendor, 0755)
+	c := config.Load()
+	if !c.Exists() {
+		i.log.Error("Configuration file could not load. Run `ginger init` before.")
+		return nil
 	}
 	var wg sync.WaitGroup
 	for _, pkg := range dependencyPackages {
 		wg.Add(1)
-		fmt.Printf("[Init] Installing %s to %s...\n", pkg, vendor)
 		go i.installDependencies(pkg, &wg)
 	}
 	wg.Wait()
@@ -46,6 +44,6 @@ func (i *Install) Run(ctx *args.Context) (err error) {
 func (i *Install) installDependencies(pkg string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	cmd := exec.Command("go", "get", pkg)
-	cmd.Env = commandEnvironment()
+	cmd.Env = buildEnv
 	cmd.Run()
 }

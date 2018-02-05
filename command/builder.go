@@ -1,10 +1,13 @@
 package command
 
 import (
+	"fmt"
 	"os"
+	"strings"
+	"sync"
+
 	"os/exec"
 	"path/filepath"
-	"sync"
 
 	"github.com/ysugimoto/ginger/entity"
 )
@@ -34,14 +37,14 @@ type builder struct {
 	dest string
 }
 
-func newBuilder(src, dest string) {
+func newBuilder(src, dest string) *builder {
 	return &builder{
 		src:  src,
 		dest: dest,
 	}
 }
 
-func (b *builder) build(targets []entity.Functions) map[*entity.Function]string {
+func (b *builder) build(targets entity.Functions) map[*entity.Function]string {
 	binaries := make(map[*entity.Function]string)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -49,7 +52,7 @@ func (b *builder) build(targets []entity.Functions) map[*entity.Function]string 
 		wg.Add(1)
 		bin := make(chan string)
 		err := make(chan error)
-		go builder.compile(fn.Name, bin, err, &wg)
+		go b.compile(fn.Name, bin, err, &wg)
 		go func() {
 			defer func() {
 				close(bin)
@@ -60,7 +63,7 @@ func (b *builder) build(targets []entity.Functions) map[*entity.Function]string 
 				return
 			case binary := <-bin:
 				mu.Lock()
-				binaries[fn] = bin
+				binaries[fn] = binary
 				mu.Unlock()
 			}
 		}()
@@ -69,19 +72,19 @@ func (b *builder) build(targets []entity.Functions) map[*entity.Function]string 
 	return binaries
 }
 
-func (b *builder) compile(name string, bin chan string, err chan error, wg *sync.WaitGroup) {
+func (b *builder) compile(name string, binChan chan string, errChan chan error, wg *sync.WaitGroup) {
 	defer wg.Done()
 	out := filepath.Join(b.dest, name)
 	src := filepath.Join(b.src, name)
 
-	cmd := exec.Command("go", []string{"build", "-o", out})
+	cmd := exec.Command("go", "build", "-o", out)
 	cmd.Dir = src
 	cmd.Env = buildEnv
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		err <- err
+		errChan <- err
 	} else {
-		bin <- src
+		binChan <- src
 	}
 }

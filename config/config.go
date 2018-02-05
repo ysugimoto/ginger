@@ -13,21 +13,24 @@ import (
 
 var mu sync.Mutex
 
-func Load() (c *Config, err error) {
-	c.Root, _ = os.Getwd()
-	c.Path = filepath.Join(c.Root, "Ginger.toml")
-	c.FunctionPath = filepath.Join(c.Root, "functions")
-	c.APIPath = filepath.Join(c.Root, "apis")
-	c.VendorPath = filepath.Join(c.Root, "vendor")
+func Load() *Config {
+	cwd, _ := os.Getwd()
+	c := &Config{
+		Root:         cwd,
+		Path:         filepath.Join(cwd, "Ginger.toml"),
+		FunctionPath: filepath.Join(cwd, "functions"),
+		APIPath:      filepath.Join(cwd, "apis"),
+		VendorPath:   filepath.Join(cwd, "vendor"),
+	}
 
-	if _, err = os.Stat(c.Path); err == nil {
+	if _, err := os.Stat(c.Path); err == nil {
 		c.exists = true
 		if _, err = toml.DecodeFile(c.Path, c); err != nil {
 			fmt.Println("Syntax error found on configuration file!")
 			os.Exit(1)
 		}
 	}
-	return c, err
+	return c
 }
 
 type Config struct {

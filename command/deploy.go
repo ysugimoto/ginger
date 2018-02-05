@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 
 	"github.com/ysugimoto/ginger/config"
+	"github.com/ysugimoto/ginger/entity"
 	"github.com/ysugimoto/ginger/logger"
 	"github.com/ysugimoto/ginger/request"
 	"github.com/ysugimoto/go-args"
@@ -25,7 +26,7 @@ type Deploy struct {
 	log *logger.Logger
 }
 
-func NewDeploy() {
+func NewDeploy() *Deploy {
 	return &Deploy{
 		log: logger.WithNamespace("ginger.deploy"),
 	}
@@ -46,23 +47,23 @@ Options:
 }
 
 func (d *Deploy) Run(ctx *args.Context) error {
-	c, err := config.Load()
-	if err != nil || !c.Exists() {
+	c := config.Load()
+	if !c.Exists() {
 		d.log.Error("Configuration file could not load. Run `ginger init` before.")
 		return nil
 	}
 	switch ctx.At(1) {
 	case DEPLOY_FUNCTION, DEPLOY_FN:
 		d.log.AddNamespace("function")
-		return d.deployFunctions(c, ctx)
+		return d.deployFunction(c, ctx)
 	case DEPLOY_API:
 		d.log.AddNamespace("api")
-		return f.deployAPI(c, ctx)
+		return d.deployAPI(c, ctx)
 	default:
 		if ctx.Has("all") {
 			d.log.AddNamespace("all")
-			d.deployFunction(x, ctx)
-			d.deployAPI(x, ctx)
+			d.deployFunction(c, ctx)
+			d.deployAPI(c, ctx)
 		} else {
 			fmt.Println(d.Help())
 		}
@@ -81,7 +82,7 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 		targets = entity.Functions{c.Functions.Find(name)}
 	}
 
-	buildDir, err := ioutil.TmpDir("", "ginger-builds")
+	buildDir, err := ioutil.TempDir("", "ginger-builds")
 	if err != nil {
 		return err
 	}
@@ -107,10 +108,14 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 			return err
 		}
 
-		if err := lambda.DeployFunction(fn, buf.Bytes()); err != nil {
+		if err := lambda.DeployFunction(fn.Name, buf.Bytes()); err != nil {
 			d.log.Error("Failed to deploy function", err)
 		}
 	}
-	f.log.Infof("Function deployed successfully! %d functions has deployed", len(binaries))
+	d.log.Infof("Function deployed successfully! %d functions has deployed", len(binaries))
+	return nil
+}
+
+func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) error {
 	return nil
 }
