@@ -1,0 +1,37 @@
+package request
+
+import (
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/service/sts"
+	"github.com/ysugimoto/ginger/config"
+	"github.com/ysugimoto/ginger/logger"
+)
+
+type StsRequest struct {
+	svc    *sts.STS
+	log    *logger.Logger
+	config *config.Config
+}
+
+func NewSts(c *config.Config) *StsRequest {
+	return &StsRequest{
+		config: c,
+		svc:    sts.New(createAWSSession(c)),
+		log:    logger.WithNamespace("ginger.request.sts"),
+	}
+}
+
+func (s *StsRequest) GetAccount() (string, error) {
+	input := &sts.GetCallerIdentityInput{}
+	result, err := s.svc.GetCallerIdentity(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			s.log.Error(aerr.Error())
+		} else {
+			s.log.Error(err)
+		}
+		return "", err
+	}
+	s.log.Infof("Account found: %s\n", *result.Account)
+	return *result.Account, nil
+}

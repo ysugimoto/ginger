@@ -35,11 +35,12 @@
     "private/protocol/rest",
     "private/protocol/restjson",
     "private/protocol/xml/xmlutil",
+    "service/apigateway",
     "service/lambda",
     "service/sts"
   ]
-  revision = "1b176c5c6b57adb03bb982c21930e708ebca5a77"
-  version = "v1.12.70"
+  revision = "0cbaf57ea311890e62f0b01652529295079e9e95"
+  version = "v1.12.71"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -109,6 +110,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e47a79d829a9b0859e6d9c7c21de52f2038d6ab0bcfd34fcec2cdf679b6d94cd"
+  inputs-digest = "b7b00a528cce0b675bac4b4911e701a3c1a98c336245e5728d4efb847ed5c430"
   solver-name = "gps-cdcl"
   solver-version = 1
