@@ -12,9 +12,12 @@ func main() {
 	ctx := args.New().
 		Alias("help", "h", nil).
 		Alias("name", "n", "").
-		Alias("profile", "p", "").
-		Alias("region", "r", "").
+		Alias("profile", "", "").
+		Alias("region", "", "").
 		Alias("role", "", "").
+		Alias("path", "", "").
+		Alias("method", "m", "GET").
+		Alias("body", "b", "").
 		Parse(os.Args[1:])
 
 	var cmd command.Command
@@ -25,6 +28,8 @@ func main() {
 		cmd = command.NewInstall()
 	case command.FUNCTION, command.FN:
 		cmd = command.NewFunction()
+	case command.API:
+		cmd = command.NewAPI()
 	case command.DEPLOY:
 		cmd = command.NewDeploy()
 		// case command.API:

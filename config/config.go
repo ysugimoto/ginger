@@ -44,7 +44,7 @@ type Config struct {
 
 	Project   entity.Project   `toml:"project"`
 	Functions entity.Functions `toml:"function"`
-	Apis      entity.APIs      `toml:"api"`
+	API       entity.API       `toml:"api"`
 }
 
 func (c *Config) Exists() bool {
