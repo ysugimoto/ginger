@@ -16,6 +16,8 @@ const (
 	FUNCTION = "function"
 	FN       = "fn"
 
+	API = "api"
+
 	CREATE = "create"
 	BUILD  = "build"
 	DEPLOY = "deploy"

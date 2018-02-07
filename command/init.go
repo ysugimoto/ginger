@@ -3,6 +3,8 @@ package command
 import (
 	"os"
 
+	"path/filepath"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -34,15 +36,12 @@ func (i *Init) Run(ctx *args.Context) (err error) {
 		i.log.Printf("Create functions directory: %s\n", c.FunctionPath)
 		os.Mkdir(c.FunctionPath, 0755)
 	}
-	if _, err := os.Stat(c.APIPath); err != nil {
-		i.log.Printf("Create API directory: %s\n", c.APIPath)
-		os.Mkdir(c.APIPath, 0755)
-	}
 	if _, err := os.Stat(c.VendorPath); err != nil {
 		i.log.Printf("Create vendor directory: %s\n", c.VendorPath)
 		os.Mkdir(c.VendorPath, 0755)
 	}
 	project := entity.Project{
+		Name:                filepath.Base(c.Root),
 		Profile:             "",
 		Region:              "us-east-1",
 		LambdaExecutionRole: "",

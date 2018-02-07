@@ -19,8 +19,12 @@ func Load() *Config {
 		Root:         cwd,
 		Path:         filepath.Join(cwd, "Ginger.toml"),
 		FunctionPath: filepath.Join(cwd, "functions"),
-		APIPath:      filepath.Join(cwd, "apis"),
 		VendorPath:   filepath.Join(cwd, "vendor"),
+		Project:      entity.Project{},
+		Functions:    entity.Functions{},
+		API: entity.API{
+			Resources: make([]*entity.Resource, 0),
+		},
 	}
 
 	if _, err := os.Stat(c.Path); err == nil {
@@ -30,6 +34,7 @@ func Load() *Config {
 			os.Exit(1)
 		}
 	}
+	c.API.Sort()
 	return c
 }
 
@@ -37,7 +42,6 @@ type Config struct {
 	Root         string `toml:"-"`
 	Path         string `toml:"-"`
 	FunctionPath string `toml:"-"`
-	APIPath      string `toml:"-"`
 	VendorPath   string `toml:"-"`
 
 	exists bool `toml:"-"`

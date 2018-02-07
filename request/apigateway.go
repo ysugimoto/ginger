@@ -77,6 +77,23 @@ func (a *APIGatewayRequest) CreateRestAPI(name string) (string, error) {
 	return *result.Id, nil
 }
 
+func (a *APIGatewayRequest) ResourceExists(restId, resourceId string) bool {
+	input := &apigateway.GetResourcesInput{
+		RestApiId: aws.String(restId),
+	}
+	result, err := a.svc.GetResources(input)
+	if err != nil {
+		a.errorLog(err)
+		return false
+	}
+	for _, item := range result.Items {
+		if *item.Id == resourceId {
+			return true
+		}
+	}
+	return false
+}
+
 func (a *APIGatewayRequest) GetResourceIdByPath(restId, path string) (string, error) {
 	a.log.Printf("Getting resource Id by path %s...\n", path)
 	input := &apigateway.GetResourcesInput{

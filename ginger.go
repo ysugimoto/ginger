@@ -18,6 +18,7 @@ func main() {
 		Alias("path", "", "").
 		Alias("method", "m", "GET").
 		Alias("body", "b", "").
+		Alias("state", "s", "").
 		Parse(os.Args[1:])
 
 	var cmd command.Command

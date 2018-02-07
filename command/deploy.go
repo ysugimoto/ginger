@@ -41,8 +41,9 @@ Subcommand:
   api:      Deploy apis (default: all, one of api if --name option supplied)
 
 Options:
-  --all:  Deploy all functions/apis
-  --name: target fucntion/api name
+  --all:   Deploy all functions/apis
+  --name:  Target fucntion name
+  --stage: Target api stage
 `
 }
 
@@ -104,7 +105,6 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 			d.log.Errorf("Archive error for %s: %s", fn.Name, err.Error())
 			continue
 		}
-		ioutil.WriteFile("/tmp/gf.zip", buffer, 0644)
 		d.log.Printf("Deploying function %s to AWS Lambda...\n", fn.Name)
 		if err := lambda.DeployFunction(fn.Name, buffer); err == nil {
 			d.log.Infof("Function %s deployed successfully!\n", fn.Name)
@@ -137,5 +137,22 @@ func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
 }
 
 func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) error {
+	api := request.NewAPIGateway(c)
+	if c.API.RestId == "" {
+		if restId, err := api.CreateRestAPI(fmt.Sprintf("ginger-%s", c.Project.Name)); err != nil {
+			return nil
+		} else {
+			c.API.RestId = restId
+			c.Write()
+		}
+	}
+	// restId := c.API.RestId
+	// rootId, err := api.GetResourceIdByPath(restId, "/")
+	// if err != nil {
+	// 	return nil
+	// }
+	// for p, r := range c.API.Resources {
+	// }
+
 	return nil
 }

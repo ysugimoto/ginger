@@ -2,16 +2,9 @@ package command
 
 import (
 	"fmt"
-	"os"
 
-	"io/ioutil"
-	"path/filepath"
-
-	"github.com/iancoleman/strcase"
-	"github.com/ysugimoto/ginger/assets"
 	"github.com/ysugimoto/ginger/config"
 	"github.com/ysugimoto/ginger/entity"
-	"github.com/ysugimoto/ginger/input"
 	"github.com/ysugimoto/ginger/logger"
 	"github.com/ysugimoto/ginger/request"
 	"github.com/ysugimoto/go-args"
@@ -23,18 +16,18 @@ const (
 	API_INVOKE = "invoke"
 )
 
-type API struct {
+type APIGateway struct {
 	Command
 	log *logger.Logger
 }
 
-func NewAPI() *API {
-	return &API{
+func NewAPI() *APIGateway {
+	return &APIGateway{
 		log: logger.WithNamespace("ginger.api"),
 	}
 }
 
-func (a *API) Help() string {
+func (a *APIGateway) Help() string {
 	return `
 ginger api [subcommand] [options]
 
@@ -50,15 +43,10 @@ Options:
 `
 }
 
-func (a *API) Run(ctx *args.Context) error {
+func (a *APIGateway) Run(ctx *args.Context) error {
 	c := config.Load()
 	if !c.Exists() {
-		f.log.Error("Configuration file could not load. Run `ginger init` before.")
-		return nil
-	}
-	path := ctx.String("path")
-	if path == "" {
-		a.log.Error("Endpoint path is required. Run with -p, --path option.")
+		a.log.Error("Configuration file could not load. Run `ginger init` before.")
 		return nil
 	}
 	switch ctx.At(1) {
@@ -74,39 +62,49 @@ func (a *API) Run(ctx *args.Context) error {
 	}
 }
 
-func (a *API) createEndpoint(c *config.Config, ctx *args.Context) error {
+func (a *APIGateway) createEndpoint(c *config.Config, ctx *args.Context) error {
 	path := ctx.String("path")
-	if c.API.Exists(path) {
-		a.log.Errorf("Endpoint of %s already exists.")
+	if path == "" {
+		a.log.Error("Endpoint path is required. Run with -p, --path option.")
+		return nil
+	} else if c.API.Exists(path) {
+		a.log.Errorf("Endpoint %s is already exists.\n", path)
 	}
-	api := &entity.Resource{
-		Path: formatPath(path),
-	}
+	api := entity.NewResource(path)
 	c.API.Resources = append(c.API.Resources, api)
+	c.API.Sort()
 	c.Write()
-	a.log.Info("API for path %s created successfully!", path)
+	a.log.Infof("API for path %s created successfully!\n", path)
 	return nil
 }
 
-func (a *API) deleteEndpoint(c *config.Config, ctx *args.Context) error {
+func (a *APIGateway) deleteEndpoint(c *config.Config, ctx *args.Context) error {
 	if c.API.RestId == "" {
-		a.log.Errorf("Any REST API isn't created yet.")
+		a.log.Error("Any REST API isn't created yet.")
 		return nil
 	}
 	path := ctx.String("path")
-	if !c.API.Exists(path) {
-		a.log.Errorf("Endpoint:%s not defined.")
+	if path == "" {
+		a.log.Error("Endpoint path is required. Run with -p, --path option.")
+		return nil
+	} else if !c.API.Exists(path) {
+		a.log.Errorf("Endpoint %s does not defined.\n", path)
 		return nil
 	}
 	rs := c.API.Find(path)
 	api := request.NewAPIGateway(c)
 	if !api.ResourceExists(c.API.RestId, rs.Id) {
-		a.log.Errorf("Rsource for %s not found on AWS.", path)
+		a.log.Errorf("Rsource for %s not found on AWS.\n", path)
 	} else if err := api.DeleteResource(c.API.RestId, rs.Id); err != nil {
 		a.log.Error("Failed to delete from AWS. Please delete manually.")
 	}
-	c.API = c.API.Remove(path)
+	c.API.Remove(path)
+	c.API.Sort()
 	c.Write()
-	a.log.Infof("Endpoint deleted successfully.")
+	a.log.Info("Endpoint deleted successfully.")
+	return nil
+}
+
+func (a *APIGateway) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 	return nil
 }
