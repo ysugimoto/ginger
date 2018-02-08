@@ -32,5 +32,8 @@ func (f Functions) Remove(name string) Functions {
 }
 
 type Function struct {
-	Name string `toml:"name"`
+	Name       string `toml:"name"`
+	Arn        string `toml:"arn"`
+	MemorySize int64  `toml:"memory_size"`
+	Timeout    int64  `toml:"timeout"`
 }

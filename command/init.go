@@ -32,6 +32,7 @@ func (i *Init) Run(ctx *args.Context) (err error) {
 		i.log.Warn("Config file found. Project has already initialized.")
 		return nil
 	}
+	defer c.Write()
 	if _, err := os.Stat(c.FunctionPath); err != nil {
 		i.log.Printf("Create functions directory: %s\n", c.FunctionPath)
 		os.Mkdir(c.FunctionPath, 0755)
@@ -76,7 +77,6 @@ func (i *Init) Run(ctx *args.Context) (err error) {
 		i.log.Printf("Lambda role set as %s\n", project.LambdaExecutionRole)
 	}
 	c.Project = project
-	c.Write()
 	NewInstall().Run(ctx)
 	i.log.Info("ginger initalized successfully!")
 	return nil

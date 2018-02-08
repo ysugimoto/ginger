@@ -17,18 +17,21 @@ func (h *Help) Run(ctx *args.Context) error {
 }
 
 func (h *Help) Help() string {
-	help := `=================================================
- ginger: Go runtime lambda function framework
-=================================================
+	help := `
 Usage:
-  ginger [subcommand] [options]
+  $ ginger [subcommand] [options]
 
 SubCommands:
-  init: Initialize project
-  create: Create lambda function boilerplate
+  init     : Initialize project
+  install  : Install ginger dependencies
+  function : Manage Go runtime Lambda functions
+  api      : Manage APIGateway resources
+  deploy   : Deploy function or api resource
 
 Options:
-  -h, --help: Show help`
+  -h, --help: Show help
 
-	return help
+To see subcommand help, run "ginger [subcommand] help".`
+
+	return COMMAND_HEADER + help
 }

@@ -10,9 +10,15 @@ import (
 	"github.com/ysugimoto/go-args"
 )
 
+const COMMAND_HEADER = `
+============================================================
+ ginger: Go runtime lambda function framework
+============================================================`
+
 const (
 	INIT     = "init"
 	INSTALL  = "install"
+	CONFIG   = "config"
 	FUNCTION = "function"
 	FN       = "fn"
 

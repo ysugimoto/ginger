@@ -53,6 +53,8 @@ func (d *Deploy) Run(ctx *args.Context) error {
 		d.log.Error("Configuration file could not load. Run `ginger init` before.")
 		return nil
 	}
+	defer c.Write()
+
 	switch ctx.At(1) {
 	case DEPLOY_FUNCTION, DEPLOY_FN:
 		if c.Project.LambdaExecutionRole == "" {
@@ -106,7 +108,7 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 			continue
 		}
 		d.log.Printf("Deploying function %s to AWS Lambda...\n", fn.Name)
-		if err := lambda.DeployFunction(fn.Name, buffer); err == nil {
+		if err := lambda.DeployFunction(fn, buffer); err == nil {
 			d.log.Infof("Function %s deployed successfully!\n", fn.Name)
 		}
 	}
@@ -146,7 +148,6 @@ func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
 			return nil
 		}
 		c.API.RestId = restId
-		c.Write()
 	}
 
 	var rootId string
@@ -157,7 +158,6 @@ func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
 		}
 		resource := entity.NewResource(rootId, "/")
 		c.API.Resources = append(c.API.Resources, resource)
-		c.Write()
 	} else {
 		rootId = r.Id
 	}

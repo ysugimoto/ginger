@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"io/ioutil"
 	"path/filepath"
@@ -21,6 +22,7 @@ const (
 	FUNCTION_CREATE = "create"
 	FUNCTION_DELETE = "delete"
 	FUNCTION_INVOKE = "invoke"
+	FUNCTION_CONFIG = "config"
 )
 
 type Function struct {
@@ -36,14 +38,19 @@ func NewFunction() *Function {
 
 func (f *Function) Help() string {
 	return `
-ginger fn [subcommand] [options]
+Usage:
+  $ ginger fn [operation] [options]
 
-Subcommand:
-  create: Create new function
-  delete: Delete function
+Operation:
+  create : Create new function
+  delete : Delete function
+  invoke : Invoke function
 
 Options:
-  -n, name: [Required] Function name
+  -n, --name    : [all] Function name (required)
+  -e, --event   : [invoke] Event source (JSON string) or "@file" for filename
+  -m, --memory  : [config] Memory size configuration (must be a multiple of 64 MB)
+  -t, --timeout : [config] Function timeout configuration
 `
 }
 
@@ -53,6 +60,8 @@ func (f *Function) Run(ctx *args.Context) error {
 		f.log.Error("Configuration file could not load. Run `ginger init` before.")
 		return nil
 	}
+	defer c.Write()
+
 	switch ctx.At(1) {
 	case FUNCTION_CREATE:
 		return f.createFunction(c, ctx)
@@ -60,10 +69,12 @@ func (f *Function) Run(ctx *args.Context) error {
 		return f.deleteFunction(c, ctx)
 	case FUNCTION_INVOKE:
 		return f.invokeFunction(c, ctx)
-	// case FUNCTION_UPDATE:
-	// 	return f.updateFunction(c, ctx)
+	case FUNCTION_CONFIG:
+		return f.configFunction(c, ctx)
+	case FUNCTION_LINK:
+		return f.linkAPI(c, ctx)
 	default:
-		fmt.Println(f.Help())
+		fmt.Println(COMMAND_HEADER + f.Help())
 		return nil
 	}
 }
@@ -96,7 +107,6 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	}
 
 	c.Functions = append(c.Functions, fn)
-	c.Write()
 	f.log.Info("Function created successfully!")
 	return nil
 }
@@ -161,11 +171,57 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 		f.log.Errorf("Delete dierectory error: %s", err)
 	}
 	c.Functions = c.Functions.Remove(name)
-	c.Write()
 	f.log.Infof("Function deleted successfully.")
 	return nil
 }
 
+func (f *Function) configFunction(c *config.Config, ctx *args.Context) error {
+	name := ctx.String("name")
+	if name == "" {
+		f.log.Error("Function name didn't supplied. Run with --name option.")
+		return nil
+	} else if !c.Functions.Exists(name) {
+		f.log.Error("Function not defined.")
+		return nil
+	}
+	fn := c.Functions.Find(name)
+	fn.MemotySize = int64(ctx.Int("memory"))
+	fn.Timeout = int64(ctx.Int("timeout"))
+	lambda := request.NewLambda(c)
+	return lambda.UpdateFunctionConfiguration(fn)
+}
+
 func (f *Function) invokeFunction(c *config.Config, ctx *args.Context) error {
+	name := ctx.String("name")
+	if name == "" {
+		f.log.Error("Function name didn't supplied. Run with --name option.")
+		return nil
+	} else if !c.Functions.Exists(name) {
+		f.log.Error("Function not defined.")
+		return nil
+	}
+	fn := c.Functions.Find(name)
+	var payload []byte
+	src := ctx.String("event")
+	if src == "" {
+		f.log.Error("Event source for invoke must be supplied.")
+		return nil
+	}
+	if strings.HasPrefix(src, "@") {
+		srcFile := src[1:]
+		if _, err := os.Stat(srcFile); err != nil {
+			f.log.Errorf("Event source file %s doesn't exist.")
+			return nil
+		}
+		payload, _ = ioutil.ReadFile(srcFile)
+	} else {
+		payload = []byte(src)
+	}
+
+	lambda := request.NewLambda(c)
+	resp, err := lambda.InvokeFunction(fn.Name, payload)
+	if err != nil {
+		return err
+	}
 	return nil
 }

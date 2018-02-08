@@ -281,3 +281,33 @@ func (a *APIGatewayRequest) DeleteResource(restId, resourceId string) error {
 	a.log.Info("Resource deleted successfully.")
 	return nil
 }
+
+func (a *APIGatewayRequest) DeleteMethod(restId, resourceId string) error {
+	a.log.Print("Deleting method...")
+	input := &apigateway.DeleteMethodInput{
+		HttpMethod: aws.String("ANY"),
+		RestApiId:  aws.String(restId),
+		ResourceId: aws.String(resourceId),
+	}
+	if _, err := a.svc.DeleteMethod(input); err != nil {
+		a.errorLog(err)
+		return err
+	}
+	a.log.Info("Method deleted successfully.")
+	return nil
+}
+
+func (a *APIGatewayRequest) DeleteIntegration(restId, resourceId string) error {
+	a.log.Print("Deleting integration...")
+	input := &apigateway.DeleteIntegrationInput{
+		HttpMethod: aws.String("ANY"),
+		RestApiId:  aws.String(restId),
+		ResourceId: aws.String(resourceId),
+	}
+	if _, err := a.svc.DeleteIntegration(input); err != nil {
+		a.errorLog(err)
+		return err
+	}
+	a.log.Info("Integration deleted successfully.")
+	return nil
+}
