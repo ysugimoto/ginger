@@ -119,7 +119,6 @@ func (a *APIGatewayRequest) CreateResource(restId, parentId, pathPart string) (s
 		PathPart:  aws.String(pathPart),
 		RestApiId: aws.String(restId),
 	}
-	fmt.Println(input)
 	result, err := a.svc.CreateResource(input)
 	if err != nil {
 		a.errorLog(err)
@@ -163,12 +162,11 @@ func (a *APIGatewayRequest) PutIntegration(restId string, r *entity.Resource) (e
 	}
 	fn := a.config.Functions.Find(r.Integration.LambdaFunction)
 	if fn == nil {
-		return fmt.Errorf("")
-	}
-	if err = a.PutLambdaIntegration(restId, r.Integration.Id, "ANY", r.Path+"/{proxy+}", fn); err != nil {
+		err = fmt.Errorf("Function %s couldn't find in your project.\n", r.Integration.LambdaFunction)
+		a.errorLog(err)
 		return err
 	}
-	return nil
+	return a.putLambdaIntegration(restId, r.Integration.Id, "ANY", r.Path+"/{proxy+}", fn)
 }
 
 func (a *APIGatewayRequest) PutMethod(restId, resourceId, httpMethod string) error {
@@ -208,8 +206,9 @@ func (a *APIGatewayRequest) generateSourceArn(account, restId, httpMethod, path 
 	)
 }
 
-func (a *APIGatewayRequest) PutLambdaIntegration(restId, resourceId, httpMethod, path string, fn *entity.Function) error {
+func (a *APIGatewayRequest) putLambdaIntegration(restId, resourceId, httpMethod, path string, fn *entity.Function) error {
 	a.log.Printf("Putting integration for lambda %s...\n", fn.Name)
+
 	l := NewLambda(a.config)
 	fnConfig, err := l.GetFunction(fn.Name)
 	if err != nil {
@@ -228,8 +227,7 @@ func (a *APIGatewayRequest) PutLambdaIntegration(restId, resourceId, httpMethod,
 		return err
 	}
 	// Add permision to lambda
-	s := NewSts(a.config)
-	account, err := s.GetAccount()
+	account, err := NewSts(a.config).GetAccount()
 	if err != nil {
 		return err
 	}
@@ -237,7 +235,7 @@ func (a *APIGatewayRequest) PutLambdaIntegration(restId, resourceId, httpMethod,
 	if err := l.AddAPIGatewayPermission(fn.Name, sourceArn); err == nil {
 		a.log.Info("Put integration successfully")
 	}
-	return err
+	return nil
 }
 
 func (a *APIGatewayRequest) Deploy(restId, stage string) error {
