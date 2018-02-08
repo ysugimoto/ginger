@@ -90,6 +90,12 @@
   revision = "3f2ec5c5d422363dc174b78b1615415fef224055"
 
 [[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/ysugimoto/cho"
   packages = ["."]
@@ -110,6 +116,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b7b00a528cce0b675bac4b4911e701a3c1a98c336245e5728d4efb847ed5c430"
+  inputs-digest = "3fd5f1438a89c8ea3f3228cec5a7c381a2bdbcc80790adf6eba143946601fc78"
   solver-name = "gps-cdcl"
   solver-version = 1

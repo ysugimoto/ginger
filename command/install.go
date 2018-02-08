@@ -28,27 +28,30 @@ func NewInstall() *Install {
 	}
 }
 
-func (i *Install) Run(ctx *args.Context) (err error) {
+func (i *Install) Run(ctx *args.Context) {
 	c := config.Load()
 	if !c.Exists() {
 		i.log.Error("Configuration file could not load. Run `ginger init` before.")
-		return nil
+		return
 	}
+
 	i.log.Print("Install function dependencies.")
-	var wg sync.WaitGroup
+
 	tmpDir, _ := ioutil.TempDir("", "ginger-tmp-packages")
 	defer os.RemoveAll(tmpDir)
+
+	var wg sync.WaitGroup
 	for _, pkg := range dependencyPackages {
 		wg.Add(1)
 		i.log.Printf("Installing %s...\n", pkg)
 		go i.installDependencies(pkg, tmpDir, &wg)
 	}
 	wg.Wait()
+
 	// Recursive copy
 	if err := i.movePackages(filepath.Join(tmpDir, "src"), c.VendorPath); err != nil {
-		i.log.Errorf("Failed to move packages: %s\n", err)
+		i.log.Error(err.Error)
 	}
-	return nil
 }
 
 func (i *Install) installDependencies(pkg, tmpDir string, wg *sync.WaitGroup) {
@@ -63,13 +66,13 @@ func (i *Install) installDependencies(pkg, tmpDir string, wg *sync.WaitGroup) {
 func (i *Install) movePackages(src, dest string) error {
 	items, err := ioutil.ReadDir(src)
 	if err != nil {
-		return err
+		return exception("Failed to read directort: %s", src)
 	}
 	for _, item := range items {
 		from := filepath.Join(src, item.Name())
 		to := filepath.Join(dest, item.Name())
 		if err := os.Rename(from, to); err != nil {
-			return err
+			return exception("Failed to move file: %s => %s", from, to)
 		}
 	}
 	return nil

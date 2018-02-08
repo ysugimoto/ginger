@@ -17,11 +17,11 @@ func NewConfig() *Config {
 	}
 }
 
-func (c *Config) Run(ctx *args.Context) (err error) {
+func (c *Config) Run(ctx *args.Context) {
 	conf := config.Load()
 	if !conf.Exists() {
 		c.log.Error("Configuration file could not load. Run `ginger init` before.")
-		return nil
+		return
 	}
 	defer conf.Write()
 
@@ -39,5 +39,4 @@ func (c *Config) Run(ctx *args.Context) (err error) {
 		c.log.Printf("Set Lambda execution role as \"%s\"\n", v)
 	}
 	c.log.Info("Configuration updated!")
-	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"crypto/tls"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 
@@ -54,62 +53,64 @@ Options:
 `
 }
 
-func (a *APIGateway) Run(ctx *args.Context) error {
+func (a *APIGateway) Run(ctx *args.Context) {
 	c := config.Load()
 	if !c.Exists() {
 		a.log.Error("Configuration file could not load. Run `ginger init` before.")
-		return nil
+		return
 	}
+	var err error
 	defer func() {
+		if err != nil {
+			a.log.Error(err.Error())
+			debugTrace(err)
+		}
 		c.API.Sort()
 		c.Write()
 	}()
 	switch ctx.At(1) {
 	case API_CREATE:
-		return a.createEndpoint(c, ctx)
+		err = a.createEndpoint(c, ctx)
 	case API_DELETE:
-		return a.deleteEndpoint(c, ctx)
+		err = a.deleteEndpoint(c, ctx)
 	case API_INVOKE:
-		return a.invokeEndpoint(c, ctx)
+		err = a.invokeEndpoint(c, ctx)
 	case API_LINK:
-		return a.linkFunction(c, ctx)
+		err = a.linkFunction(c, ctx)
 	default:
 		fmt.Println(a.Help())
-		return nil
 	}
 }
 
 func (a *APIGateway) createEndpoint(c *config.Config, ctx *args.Context) error {
 	path := ctx.String("path")
 	if path == "" {
-		a.log.Error("Endpoint path is required. Run with -p, --path option.")
-		return nil
+		return exception("Endpoint path is required. Run with -p, --path option.")
 	} else if c.API.Exists(path) {
-		a.log.Errorf("Endpoint %s is already exists.\n", path)
+		return exception("Endpoint %s is already exists.\n", path)
 	}
-	api := entity.NewResource("", path)
-	c.API.Resources = append(c.API.Resources, api)
+
+	c.API.Resources = append(c.API.Resources, entity.NewResource("", path))
 	a.log.Infof("API for path %s created successfully!\n", path)
 	return nil
 }
 
 func (a *APIGateway) deleteEndpoint(c *config.Config, ctx *args.Context) error {
 	if c.API.RestId == "" {
-		a.log.Error("Any REST API isn't created yet.")
-		return nil
+		return exception("Any REST API isn't created yet.")
 	}
+
 	path := ctx.String("path")
 	if path == "" {
-		a.log.Error("Endpoint path is required. Run with -p, --path option.")
-		return nil
+		return exception("Endpoint path is required. Run with -p, --path option.")
 	} else if !c.API.Exists(path) {
-		a.log.Errorf("Endpoint %s does not defined.\n", path)
-		return nil
+		return exception("Endpoint %s does not defined.\n", path)
 	}
+
 	rs := c.API.Find(path)
 	api := request.NewAPIGateway(c)
 	if !api.ResourceExists(c.API.RestId, rs.Id) {
-		a.log.Errorf("Rsource for %s not found on AWS.\n", path)
+		return exception("Rsource for %s not found on AWS.\n", path)
 	} else if err := api.DeleteResource(c.API.RestId, rs.Id); err != nil {
 		a.log.Error("Failed to delete from AWS. Please delete manually.")
 	}
@@ -121,18 +122,16 @@ func (a *APIGateway) deleteEndpoint(c *config.Config, ctx *args.Context) error {
 func (a *APIGateway) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 	path := ctx.String("path")
 	if path == "" {
-		a.log.Error("Endpoint path is required. Run with -p, --path option.")
-		return nil
+		return exception("Endpoint path is required. Run with -p, --path option.")
 	} else if !c.API.Exists(path) {
-		a.log.Errorf("Endpoint %s does not defined.\n", path)
-		return nil
+		return exception("Endpoint %s does not defined.\n", path)
 	}
+
 	rs := c.API.Find(path)
 	if rs.Id == "" {
-		a.log.Errorf("Endpoint %s hasn't not deployed yet.\n", path)
-		return nil
+		return exception("Endpoint %s hasn't not deployed yet.\n", path)
 	}
-	method := strings.ToUpper(ctx.Strig("method"))
+	method := strings.ToUpper(ctx.String("method"))
 	data := ctx.String("data")
 	stage := ctx.String("stage")
 	host := fmt.Sprintf("%s.execute-api.%s.amazonaws.com", c.API.RestId, c.Project.Region)
@@ -140,7 +139,10 @@ func (a *APIGateway) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 
 	a.log.Printf("Send HTTP request to %s\n", callUrl)
 
-	req := http.NewRequest(strings.ToUpper(method), callUrl, strings.NewReader(data))
+	req, err := http.NewRequest(strings.ToUpper(method), callUrl, strings.NewReader(data))
+	if err != nil {
+		return exception("Failed to create HTTP request: %s\n", err.Error())
+	}
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -150,43 +152,38 @@ func (a *APIGateway) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		a.log.Errorf("Request Failed: %s\n", err.Error())
-		return nil
+		return exception("Request Failed: %s\n", err.Error())
 	}
 	defer resp.Body.Close()
-	dump, err := httputil.DumpResponse(resp, true)
-	if err != nil {
-		a.log.Errorf("Failed to dump response: %s\n", err.Error())
-		return nil
+	if dump, err := httputil.DumpResponse(resp, true); err != nil {
+		return exception("Failed to dump response: %s\n", err.Error())
+	} else {
+		a.log.Info("========== Response received =========")
+		fmt.Println(string(dump))
 	}
-	a.log.Info("Response received")
-	a.log.Print(string(dump))
 	return nil
 }
 
 func (a *APIGateway) linkFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
-		a.log.Error("Function name didn't supplied. Run with --name option.")
-		return nil
+		return exception("Function name didn't supplied. Run with --name option.")
 	} else if !c.Functions.Exists(name) {
-		a.log.Error("Function not defined.")
-		return nil
+		return exception("Function %s doesn't defined in your project.")
 	}
-	fn := c.Functions.Find(name)
+
 	path := ctx.String("path")
 	if path == "" {
-		a.log.Error("Endpoint path is required. Run with -p, --path option.")
-		return nil
+		return exception("Endpoint path is required. Run with -p, --path option.")
 	} else if !c.API.Exists(path) {
-		a.log.Errorf("Endpoint %s does not defined.\n", path)
-		return nil
+		return exception("Endpoint %s does not defined in your project.\n", path)
 	}
+
 	rs := c.API.Find(path)
 	if rs.Id != "" && rs.Integration != nil {
-		if !input.Bool("%s has already have integration to %s. Override it?", rs.Path, rs.Integration.LambdaFunction) {
-			a.log.Print("Canceled.")
-			return nil
+		inquiry := fmt.Sprintf("%s has already have integration to %s. Override it?", rs.Path, rs.Integration.LambdaFunction)
+		if !input.Bool(inquiry) {
+			return exception("Canceled.")
 		}
 		api := request.NewAPIGateway(c)
 		api.DeleteMethod(c.API.RestId, rs.Id)

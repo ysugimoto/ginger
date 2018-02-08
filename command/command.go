@@ -30,7 +30,7 @@ const (
 )
 
 type Command interface {
-	Run(ctx *args.Context) error
+	Run(ctx *args.Context)
 	Help() string
 }
 

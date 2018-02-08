@@ -12,8 +12,8 @@ func NewHelp() *Help {
 	return &Help{}
 }
 
-func (h *Help) Run(ctx *args.Context) error {
-	return nil
+func (h *Help) Run(ctx *args.Context) {
+	// noop
 }
 
 func (h *Help) Help() string {

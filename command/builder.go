@@ -29,7 +29,7 @@ func (b *builder) build(targets entity.Functions) map[*entity.Function]string {
 	log := logger.WithNamespace("ginger.build")
 	binaries := make(map[*entity.Function]string)
 	var wg sync.WaitGroup
-	// var mu sync.Mutex
+	var mu sync.Mutex
 	for _, fn := range targets {
 		wg.Add(1)
 		log.Printf("Building function: %s...\n", fn.Name)
@@ -47,10 +47,10 @@ func (b *builder) build(targets entity.Functions) map[*entity.Function]string {
 				log.Errorf("Failed to build function: %s\n", e.Error())
 				return
 			case binary := <-bin:
-				log.Infof("Function build successfully: %s:%s\n", fn.Name, binary)
-				// mu.Lock()
+				log.Infof("Function built successfully: %s:%s\n", fn.Name, binary)
+				mu.Lock()
 				binaries[fn] = binary
-				// mu.Unlock()
+				mu.Unlock()
 			}
 		}()
 	}

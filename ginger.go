@@ -8,6 +8,8 @@ import (
 	"github.com/ysugimoto/go-args"
 )
 
+var Version = "dev"
+
 func main() {
 	ctx := args.New().
 		Alias("help", "h", nil).
@@ -46,7 +48,7 @@ func main() {
 		fmt.Println(cmd.Help())
 	} else if ctx.Has("help") {
 		fmt.Println(cmd.Help())
-	} else if err := cmd.Run(ctx); err != nil {
-		fmt.Printf("Command %s failed: %s\n", ctx.At(0), err.Error())
+	} else {
+		cmd.Run(ctx)
 	}
 }

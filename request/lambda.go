@@ -100,7 +100,7 @@ func (l *LambdaRequest) DeployFunction(fn *entity.Function, zipBytes []byte) (st
 		l.log.Printf("%s already exists, update fucntion\n", fn.Name)
 		return l.UpdateFunction(fn, zipBytes)
 	} else {
-		l.log.Printf("Creating new function %s\n", name)
+		l.log.Printf("Creating new function %s\n", fn.Name)
 		return l.CreateFunction(fn, zipBytes)
 	}
 }
@@ -131,7 +131,7 @@ func (l *LambdaRequest) UpdateFunction(fn *entity.Function, zipBytes []byte) (st
 		return "", err
 	}
 	input := &lambda.UpdateFunctionCodeInput{
-		FunctionName: aws.String(name),
+		FunctionName: aws.String(fn.Name),
 		Publish:      aws.Bool(true),
 		ZipFile:      zipBytes,
 	}
@@ -204,9 +204,9 @@ func (l *LambdaRequest) UpdateFunctionConfiguration(fn *entity.Function) error {
 	input := &lambda.UpdateFunctionConfigurationInput{
 		FunctionName: aws.String(fn.Name),
 		MemorySize:   aws.Int64(fn.MemorySize),
-		TImeout:      aws.Int64(fn.Timeout),
+		Timeout:      aws.Int64(fn.Timeout),
 	}
-	if _, err := lambda.UpdateFunctionConfiguration(input); err != nil {
+	if _, err := l.svc.UpdateFunctionConfiguration(input); err != nil {
 		l.errorLog(err)
 		return err
 	}
@@ -215,8 +215,8 @@ func (l *LambdaRequest) UpdateFunctionConfiguration(fn *entity.Function) error {
 }
 
 func (l *LambdaRequest) InvokeFunction(name string, payload []byte) error {
-	input := &lambda.InvokeFunctionInput{
-		FunctionName: name,
+	input := &lambda.InvokeInput{
+		FunctionName: aws.String(name),
 		Payload:      payload,
 	}
 	result, err := l.svc.Invoke(input)
@@ -229,6 +229,6 @@ func (l *LambdaRequest) InvokeFunction(name string, payload []byte) error {
 	} else {
 		l.log.Infof("Function invoked on version: %s and succeeded\n", *result.ExecutedVersion)
 	}
-	l.log.Print(string(Payload))
+	l.log.Print(string(result.Payload))
 	return nil
 }

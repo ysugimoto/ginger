@@ -48,62 +48,62 @@ Operation:
 
 Options:
   -n, --name    : [all] Function name (required)
+  -e, --event   : [create] Purpose of function event [s3|apigateway]
   -e, --event   : [invoke] Event source (JSON string) or "@file" for filename
   -m, --memory  : [config] Memory size configuration (must be a multiple of 64 MB)
   -t, --timeout : [config] Function timeout configuration
 `
 }
 
-func (f *Function) Run(ctx *args.Context) error {
+func (f *Function) Run(ctx *args.Context) {
 	c := config.Load()
 	if !c.Exists() {
 		f.log.Error("Configuration file could not load. Run `ginger init` before.")
-		return nil
+		return
 	}
-	defer c.Write()
+	var err error
+	defer func() {
+		if err != nil {
+			f.log.Error(err.Error())
+			debugTrace(err)
+		}
+		c.Write()
+	}()
 
 	switch ctx.At(1) {
 	case FUNCTION_CREATE:
-		return f.createFunction(c, ctx)
+		err = f.createFunction(c, ctx)
 	case FUNCTION_DELETE:
-		return f.deleteFunction(c, ctx)
+		err = f.deleteFunction(c, ctx)
 	case FUNCTION_INVOKE:
-		return f.invokeFunction(c, ctx)
+		err = f.invokeFunction(c, ctx)
 	case FUNCTION_CONFIG:
-		return f.configFunction(c, ctx)
-	case FUNCTION_LINK:
-		return f.linkAPI(c, ctx)
+		err = f.configFunction(c, ctx)
 	default:
 		fmt.Println(COMMAND_HEADER + f.Help())
-		return nil
 	}
 }
 
 func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
-		f.log.Error("Function name didn't supplied. Run with --name option.")
-		return nil
+		return exception("Function name didn't supplied. Run with --name option.")
 	} else if c.Functions.Exists(name) {
-		f.log.Error("Function already defined.")
-		return nil
+		return exception("Function already defined.")
 	}
 	fn := &entity.Function{
 		Name: name,
 	}
 	fnPath := filepath.Join(c.FunctionPath, name)
 	if err := os.Mkdir(fnPath, 0755); err != nil {
-		f.log.Errorf("Couldn't create directory: %s", fnPath)
-		return nil
+		return exception("Couldn't create directory: %s", fnPath)
 	}
-	err := ioutil.WriteFile(
+	if err := ioutil.WriteFile(
 		filepath.Join(c.FunctionPath, name, "main.go"),
 		f.buildTemplate(name, ctx.String("event")),
 		0644,
-	)
-	if err != nil {
-		f.log.Errorf("Create function error: %s", err.Error())
-		return nil
+	); err != nil {
+		return exception("Create function error: %s", err.Error())
 	}
 
 	c.Functions = append(c.Functions, fn)
@@ -150,12 +150,11 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
-		f.log.Error("Function name didn't supplied. Run with --name option.")
-		return nil
+		return exception("Function name didn't supplied. Run with --name option.")
 	} else if !c.Functions.Exists(name) {
-		f.log.Error("Function not defined.")
-		return nil
+		return exception("Function not defined.")
 	}
+
 	f.log.Printf("Deleting function: %s\n", name)
 	lambda := request.NewLambda(c)
 	f.log.Print("Checking lambda function exintence...")
@@ -168,7 +167,7 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 	}
 	f.log.Printf("Deleting files...")
 	if err := os.RemoveAll(filepath.Join(c.FunctionPath, name)); err != nil {
-		f.log.Errorf("Delete dierectory error: %s", err)
+		return exception("Delete dierectory error: %s", err.Error())
 	}
 	c.Functions = c.Functions.Remove(name)
 	f.log.Infof("Function deleted successfully.")
@@ -178,14 +177,13 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 func (f *Function) configFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
-		f.log.Error("Function name didn't supplied. Run with --name option.")
-		return nil
+		return exception("Function name didn't supplied. Run with --name option.")
 	} else if !c.Functions.Exists(name) {
-		f.log.Error("Function not defined.")
-		return nil
+		return exception("Function %s does not defined.", name)
 	}
+
 	fn := c.Functions.Find(name)
-	fn.MemotySize = int64(ctx.Int("memory"))
+	fn.MemorySize = int64(ctx.Int("memory"))
 	fn.Timeout = int64(ctx.Int("timeout"))
 	lambda := request.NewLambda(c)
 	return lambda.UpdateFunctionConfiguration(fn)
@@ -194,34 +192,30 @@ func (f *Function) configFunction(c *config.Config, ctx *args.Context) error {
 func (f *Function) invokeFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
-		f.log.Error("Function name didn't supplied. Run with --name option.")
-		return nil
+		return exception("Function name didn't supplied. Run with --name option.")
 	} else if !c.Functions.Exists(name) {
-		f.log.Error("Function not defined.")
-		return nil
-	}
-	fn := c.Functions.Find(name)
-	var payload []byte
-	src := ctx.String("event")
-	if src == "" {
-		f.log.Error("Event source for invoke must be supplied.")
-		return nil
-	}
-	if strings.HasPrefix(src, "@") {
-		srcFile := src[1:]
-		if _, err := os.Stat(srcFile); err != nil {
-			f.log.Errorf("Event source file %s doesn't exist.")
-			return nil
-		}
-		payload, _ = ioutil.ReadFile(srcFile)
-	} else {
-		payload = []byte(src)
+		return exception("Function not defined.")
 	}
 
 	lambda := request.NewLambda(c)
-	resp, err := lambda.InvokeFunction(fn.Name, payload)
-	if err != nil {
-		return err
+	if !lambda.FunctionExists(name) {
+		return exception("Function %s couldn't find in AWS. Please deploy it before invoke.", name)
 	}
+
+	var payload []byte
+	src := ctx.String("event")
+	if src != "" {
+		if strings.HasPrefix(src, "@") {
+			srcFile := src[1:]
+			if _, err := os.Stat(srcFile); err != nil {
+				return exception("Event source file %s doesn't exist.")
+			}
+			payload, _ = ioutil.ReadFile(srcFile)
+		} else {
+			payload = []byte(src)
+		}
+	}
+
+	lambda.InvokeFunction(name, payload)
 	return nil
 }

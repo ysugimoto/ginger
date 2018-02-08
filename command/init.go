@@ -26,13 +26,14 @@ func NewInit() *Init {
 	}
 }
 
-func (i *Init) Run(ctx *args.Context) (err error) {
+func (i *Init) Run(ctx *args.Context) {
 	c := config.Load()
 	if c.Exists() {
 		i.log.Warn("Config file found. Project has already initialized.")
-		return nil
+		return
 	}
 	defer c.Write()
+
 	if _, err := os.Stat(c.FunctionPath); err != nil {
 		i.log.Printf("Create functions directory: %s\n", c.FunctionPath)
 		os.Mkdir(c.FunctionPath, 0755)
@@ -47,37 +48,39 @@ func (i *Init) Run(ctx *args.Context) (err error) {
 		Region:              "us-east-1",
 		LambdaExecutionRole: "",
 	}
-	var sess *session.Session
+
 	if p := ctx.String("profile"); p != "" {
 		project.Profile = p
-		creds := credentials.NewSharedCredentials("", p)
-		sess = session.New(aws.NewConfig().WithCredentials(creds))
-		if *sess.Config.Region != "" {
-			project.Region = *sess.Config.Region
-		}
-	} else {
-		sess = session.Must(session.NewSession())
-		if *sess.Config.Region != "" {
-			project.Region = *sess.Config.Region
-		}
+	}
+	if r := i.regionFromProfile(project.Profile); r != "" {
+		project.Region = r
 	}
 	if r := ctx.String("region"); r != "" {
 		project.Region = r
 	}
 	if r := ctx.String("role"); r != "" {
 		project.LambdaExecutionRole = r
-	} else {
 	}
 
 	i.log.Printf("Region set as %s\n", project.Region)
 	i.log.Printf("Profile set as %s\n", project.Profile)
 	if project.LambdaExecutionRole == "" {
-		i.log.Warn("Lambda Execution Role isn't set. Please add 'lambda_execution_role' field before deploy function.")
+		i.log.Warn("Lambda Execution Role isn't set. Please run 'ginger config --role [role name]' before you deploy function.")
 	} else {
 		i.log.Printf("Lambda role set as %s\n", project.LambdaExecutionRole)
 	}
 	c.Project = project
 	NewInstall().Run(ctx)
 	i.log.Info("ginger initalized successfully!")
-	return nil
+}
+
+func (i *Init) regionFromProfile(profile string) string {
+	var sess *session.Session
+	if profile != "" {
+		creds := credentials.NewSharedCredentials("", profile)
+		sess = session.New(aws.NewConfig().WithCredentials(creds))
+	} else {
+		sess = session.Must(session.NewSession())
+	}
+	return *sess.Config.Region
 }

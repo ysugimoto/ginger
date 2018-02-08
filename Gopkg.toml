@@ -50,3 +50,7 @@ required = ["github.com/jteeuwen/go-bindata"]
 [[constraint]]
   name = "github.com/aws/aws-sdk-go"
   version = "1.12.70"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  version = "0.8.0"
