@@ -18,7 +18,7 @@ func formatProxyPath(path string) string {
 	if n := strings.Index(path, "/{proxy+}"); n != -1 {
 		path = path[0:n]
 	}
-	return "/" + path + "/{proxy+}"
+	return "/" + path
 }
 
 type APIGatewayRequest struct {
@@ -113,12 +113,13 @@ func (a *APIGatewayRequest) GetResourceIdByPath(restId, path string) (string, er
 }
 
 func (a *APIGatewayRequest) CreateResource(restId, parentId, pathPart string) (string, error) {
-	a.log.Printf("Creating resource for path part  %s...\n", pathPart)
+	a.log.Printf("Creating resource for path part \"%s\"...\n", pathPart)
 	input := &apigateway.CreateResourceInput{
 		ParentId:  aws.String(parentId),
 		PathPart:  aws.String(pathPart),
 		RestApiId: aws.String(restId),
 	}
+	fmt.Println(input)
 	result, err := a.svc.CreateResource(input)
 	if err != nil {
 		a.errorLog(err)
@@ -126,6 +127,48 @@ func (a *APIGatewayRequest) CreateResource(restId, parentId, pathPart string) (s
 	}
 	a.log.Infof("Resource created successfully. Id is %s\n", *result.Id)
 	return *result.Id, nil
+}
+
+func (a *APIGatewayRequest) CreateResourceRecursive(restId, path string) (err error) {
+	var (
+		parentId, parts string
+		rs              *entity.Resource
+	)
+	for _, part := range strings.Split(path, "/") {
+		parts += "/" + part
+		if rs = a.config.API.Find(parts); rs == nil {
+			rs = entity.NewResource("", parts)
+			a.config.API.Resources = append(a.config.API.Resources, rs)
+		}
+		if rs.Id == "" {
+			if rs.Id, err = a.CreateResource(restId, parentId, part); err != nil {
+				return err
+			}
+		}
+		parentId = rs.Id
+	}
+	return nil
+}
+
+func (a *APIGatewayRequest) PutIntegration(restId string, r *entity.Resource) (err error) {
+	// Need to add extra "/{proxy+}" resource for lambda integration
+	if r.Integration.Id == "" {
+		r.Integration.Id, err = a.CreateResource(restId, r.Id, "{proxy+}")
+		if err != nil {
+			return err
+		}
+	}
+	if err = a.PutMethod(restId, r.Integration.Id, "ANY"); err != nil {
+		return err
+	}
+	fn := a.config.Functions.Find(r.Integration.LambdaFunction)
+	if fn == nil {
+		return fmt.Errorf("")
+	}
+	if err = a.PutLambdaIntegration(restId, r.Integration.Id, "ANY", r.Path+"/{proxy+}", fn); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (a *APIGatewayRequest) PutMethod(restId, resourceId, httpMethod string) error {

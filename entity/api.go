@@ -9,22 +9,6 @@ func formatPath(path string) string {
 	return "/" + strings.Trim(path, "/")
 }
 
-type Resource struct {
-	Id                 string `toml:"id"`
-	Path               string `toml:"path"`
-	IntegratedFunction string `toml:"function"`
-	UserDefined        bool   `toml:"user_defined"`
-}
-
-func NewResource(id, path string) *Resource {
-	return &Resource{
-		Id:                 id,
-		Path:               formatPath(path),
-		IntegratedFunction: "",
-		UserDefined:        false,
-	}
-}
-
 type API struct {
 	RestId    string      `toml:"rest_id"`
 	Resources []*Resource `toml:"resource"`

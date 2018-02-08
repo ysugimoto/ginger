@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"strings"
 
 	"archive/zip"
 	"io/ioutil"
@@ -140,6 +139,7 @@ func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
 func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
 	api := request.NewAPIGateway(c)
 	restId := c.API.RestId
+	defer c.Write()
 	if restId == "" {
 		restId, err = api.CreateRestAPI(fmt.Sprintf("ginger-%s", c.Project.Name))
 		if err != nil {
@@ -155,8 +155,7 @@ func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
 		if err != nil {
 			return nil
 		}
-		resource := entity.NewResource("/")
-		resource.Id = rootId
+		resource := entity.NewResource(rootId, "/")
 		c.API.Resources = append(c.API.Resources, resource)
 		c.Write()
 	} else {
@@ -168,45 +167,9 @@ func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
 		if r.Id != "" {
 			continue
 		}
-		if err := d.deployResources(c, restId, r); err != nil {
+		if err := api.CreateResourceRecursive(restId, r.Path); err != nil {
 			return nil
 		}
 	}
-}
-
-func (d *Deploy) deployResources(c *config.Config, restId string, resource *entity.Resource) (err error) {
-	var parentId string
-	var parts string
-	var resource *entity.Resource
-	// Split by path part and create recursively
-	for _, part := range strings.Split(r.Path) {
-		parts += "/" + part
-		// Exists in config
-		if resource = c.API.Find(parts); resource != nil {
-			if resource.Id == "" {
-				resource.Id, err = api.CreateResource(restId, parentId, part)
-				if err != nil {
-					return err
-				}
-			}
-			parentId = resource.Id
-			continue
-		}
-		// Create for sub path
-		resourceId, err = api.CreateResource(restId, parentId, part)
-		if err != nil {
-			return err
-		}
-		resource = entity.NewResource(resourceId, parts)
-		c.API.Resources = append(c.API.Resources, resource)
-		c.Write()
-		parentId = resourceId
-		if resource.IntegratedFunction != "" {
-			d.putLambdaInteragation(restId, resource)
-		}
-	}
-}
-
-func (d *Deploy) putLambdaIntegration(restId string, resource *entity.Resource) error {
 	return nil
 }
