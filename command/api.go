@@ -70,7 +70,7 @@ func (a *APIGateway) createEndpoint(c *config.Config, ctx *args.Context) error {
 	} else if c.API.Exists(path) {
 		a.log.Errorf("Endpoint %s is already exists.\n", path)
 	}
-	api := entity.NewResource(path)
+	api := entity.NewResource("", path)
 	c.API.Resources = append(c.API.Resources, api)
 	c.API.Sort()
 	c.Write()

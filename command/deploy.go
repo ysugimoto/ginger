@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 
 	"archive/zip"
 	"io/ioutil"
@@ -38,7 +39,7 @@ func (d *Deploy) Help() string {
 
 Subcommand:
   function: Deploy functions (default: all, one of function if --name option supplied)
-  api:      Deploy apis (default: all, one of api if --name option supplied)
+  api:      Deploy apis (default: all, one of path if --name option supplied)
 
 Options:
   --all:   Deploy all functions/apis
@@ -136,23 +137,76 @@ func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) error {
+func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
 	api := request.NewAPIGateway(c)
-	if c.API.RestId == "" {
-		if restId, err := api.CreateRestAPI(fmt.Sprintf("ginger-%s", c.Project.Name)); err != nil {
+	restId := c.API.RestId
+	if restId == "" {
+		restId, err = api.CreateRestAPI(fmt.Sprintf("ginger-%s", c.Project.Name))
+		if err != nil {
 			return nil
-		} else {
-			c.API.RestId = restId
-			c.Write()
+		}
+		c.API.RestId = restId
+		c.Write()
+	}
+
+	var rootId string
+	if r := c.API.Find("/"); r == nil {
+		rootId, err = api.GetResourceIdByPath(restId, "/")
+		if err != nil {
+			return nil
+		}
+		resource := entity.NewResource("/")
+		resource.Id = rootId
+		c.API.Resources = append(c.API.Resources, resource)
+		c.Write()
+	} else {
+		rootId = r.Id
+	}
+
+	for _, r := range c.API.Resources {
+		// If "Id" exists, the resource has already been deployed
+		if r.Id != "" {
+			continue
+		}
+		if err := d.deployResources(c, restId, r); err != nil {
+			return nil
 		}
 	}
-	// restId := c.API.RestId
-	// rootId, err := api.GetResourceIdByPath(restId, "/")
-	// if err != nil {
-	// 	return nil
-	// }
-	// for p, r := range c.API.Resources {
-	// }
+}
 
+func (d *Deploy) deployResources(c *config.Config, restId string, resource *entity.Resource) (err error) {
+	var parentId string
+	var parts string
+	var resource *entity.Resource
+	// Split by path part and create recursively
+	for _, part := range strings.Split(r.Path) {
+		parts += "/" + part
+		// Exists in config
+		if resource = c.API.Find(parts); resource != nil {
+			if resource.Id == "" {
+				resource.Id, err = api.CreateResource(restId, parentId, part)
+				if err != nil {
+					return err
+				}
+			}
+			parentId = resource.Id
+			continue
+		}
+		// Create for sub path
+		resourceId, err = api.CreateResource(restId, parentId, part)
+		if err != nil {
+			return err
+		}
+		resource = entity.NewResource(resourceId, parts)
+		c.API.Resources = append(c.API.Resources, resource)
+		c.Write()
+		parentId = resourceId
+		if resource.IntegratedFunction != "" {
+			d.putLambdaInteragation(restId, resource)
+		}
+	}
+}
+
+func (d *Deploy) putLambdaIntegration(restId string, resource *entity.Resource) error {
 	return nil
 }

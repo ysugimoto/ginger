@@ -16,9 +16,9 @@ type Resource struct {
 	UserDefined        bool   `toml:"user_defined"`
 }
 
-func NewResource(path string) *Resource {
+func NewResource(id, path string) *Resource {
 	return &Resource{
-		Id:                 "",
+		Id:                 id,
 		Path:               formatPath(path),
 		IntegratedFunction: "",
 		UserDefined:        false,
