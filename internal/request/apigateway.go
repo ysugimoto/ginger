@@ -8,9 +8,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/apigateway"
-	"github.com/ysugimoto/ginger/config"
-	"github.com/ysugimoto/ginger/entity"
-	"github.com/ysugimoto/ginger/logger"
+
+	"github.com/ysugimoto/ginger/internal/config"
+	"github.com/ysugimoto/ginger/internal/entity"
+	"github.com/ysugimoto/ginger/internal/logger"
 )
 
 func formatProxyPath(path string) string {

@@ -8,11 +8,12 @@ import (
 	"archive/zip"
 	"io/ioutil"
 
-	"github.com/ysugimoto/ginger/config"
-	"github.com/ysugimoto/ginger/entity"
-	"github.com/ysugimoto/ginger/logger"
-	"github.com/ysugimoto/ginger/request"
 	"github.com/ysugimoto/go-args"
+
+	"github.com/ysugimoto/ginger/internal/config"
+	"github.com/ysugimoto/ginger/internal/entity"
+	"github.com/ysugimoto/ginger/internal/logger"
+	"github.com/ysugimoto/ginger/internal/request"
 )
 
 const (
@@ -20,6 +21,7 @@ const (
 	DEPLOY_FN       = "fn"
 	DEPLOY_API      = "api"
 	DEPLOY_ALL      = "all"
+	DEPLOY_HELP     = "help"
 )
 
 type Deploy struct {
@@ -35,17 +37,20 @@ func NewDeploy() *Deploy {
 
 func (d *Deploy) Help() string {
 	return `
+deploy - Deploy management functions and apis.
+
 Usage:
   $ ginger deploy [subcommand] [options]
 
 Subcommand:
-  function: Deploy functions (default: all, one of function if --name option supplied)
-  api:      Deploy apis (default: all, one of path if --name option supplied)
-  all:      Deploy both of functions and apis
+  function : Deploy functions (default: all, one of function if --name option supplied)
+  api      : Deploy apis (default: all, one of path if --name option supplied)
+  all      : Deploy both of functions and apis
+  help     : Show this help
 
 Options:
-  --name:  Target fucntion name
-  --stage: Target api stage
+  --name  : Target fucntion name
+  --stage : Target api stage
 `
 }
 

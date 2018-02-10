@@ -3,8 +3,9 @@ package request
 import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/ysugimoto/ginger/config"
-	"github.com/ysugimoto/ginger/logger"
+
+	"github.com/ysugimoto/ginger/internal/config"
+	"github.com/ysugimoto/ginger/internal/logger"
 )
 
 type StsRequest struct {

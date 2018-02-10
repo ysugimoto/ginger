@@ -7,7 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/ysugimoto/ginger/config"
+
+	"github.com/ysugimoto/ginger/internal/config"
 )
 
 var debug string = ""

@@ -7,4 +7,4 @@ production: assets
 	go build -o dist/ginger
 
 assets:
-	go-bindata -o assets/assets.go --pkg assets --prefix misc ./misc
+	go-bindata -o internal/assets/assets.go --pkg assets --prefix misc ./misc

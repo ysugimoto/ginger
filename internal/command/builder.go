@@ -9,8 +9,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/ysugimoto/ginger/entity"
-	"github.com/ysugimoto/ginger/logger"
+	"github.com/ysugimoto/ginger/internal/entity"
+	"github.com/ysugimoto/ginger/internal/logger"
 )
 
 type builder struct {

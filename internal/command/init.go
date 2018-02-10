@@ -8,11 +8,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-
-	"github.com/ysugimoto/ginger/config"
-	"github.com/ysugimoto/ginger/entity"
-	"github.com/ysugimoto/ginger/logger"
 	"github.com/ysugimoto/go-args"
+
+	"github.com/ysugimoto/ginger/internal/config"
+	"github.com/ysugimoto/ginger/internal/entity"
+	"github.com/ysugimoto/ginger/internal/logger"
 )
 
 type Init struct {
@@ -24,6 +24,10 @@ func NewInit() *Init {
 	return &Init{
 		log: logger.WithNamespace("ginger.init"),
 	}
+}
+
+func (i *Init) Help() string {
+	return "No Help"
 }
 
 func (i *Init) Run(ctx *args.Context) {

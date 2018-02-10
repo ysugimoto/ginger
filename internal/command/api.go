@@ -9,13 +9,13 @@ import (
 	"net/http/httputil"
 
 	"github.com/mattn/go-tty"
-
-	"github.com/ysugimoto/ginger/config"
-	"github.com/ysugimoto/ginger/entity"
-	"github.com/ysugimoto/ginger/input"
-	"github.com/ysugimoto/ginger/logger"
-	"github.com/ysugimoto/ginger/request"
 	"github.com/ysugimoto/go-args"
+
+	"github.com/ysugimoto/ginger/internal/config"
+	"github.com/ysugimoto/ginger/internal/entity"
+	"github.com/ysugimoto/ginger/internal/input"
+	"github.com/ysugimoto/ginger/internal/logger"
+	"github.com/ysugimoto/ginger/internal/request"
 )
 
 const (
@@ -25,6 +25,7 @@ const (
 	API_LINK   = "link"
 	API_DEPLOY = "deploy"
 	API_LIST   = "list"
+	API_HELP   = "help"
 )
 
 type APIGateway struct {
@@ -40,6 +41,8 @@ func NewAPI() *APIGateway {
 
 func (a *APIGateway) Help() string {
 	return `
+api - AWS APIGateway management command.
+
 Usage:
   $ ginger api [operation] [options]
 
@@ -47,8 +50,10 @@ Operation:
   create : Create new endpoint
   delete : Delete endpoint
   invoke : Invoke endpoint
+  link   : Make lambda function integration for gateway request
   deploy : Deploy endpoint
   list   : List endpoint
+  help   : Show this help
 
 Options:
   -p, --path   : [all] Path name

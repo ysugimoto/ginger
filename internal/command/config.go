@@ -1,9 +1,10 @@
 package command
 
 import (
-	"github.com/ysugimoto/ginger/config"
-	"github.com/ysugimoto/ginger/logger"
 	"github.com/ysugimoto/go-args"
+
+	"github.com/ysugimoto/ginger/internal/config"
+	"github.com/ysugimoto/ginger/internal/logger"
 )
 
 type Config struct {
@@ -15,6 +16,20 @@ func NewConfig() *Config {
 	return &Config{
 		log: logger.WithNamespace("ginger.config"),
 	}
+}
+
+func (c *Config) Help() string {
+	return `
+config - Set or update project confiugration.
+
+Usage:
+  $ ginger config [options]
+
+Options:
+  --profile : Using profile name
+  --region  : Set project region
+  --role    : Set lambda execution role
+`
 }
 
 func (c *Config) Run(ctx *args.Context) {
