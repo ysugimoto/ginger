@@ -93,10 +93,13 @@ func (l *LambdaRequest) DeleteFunction(name string) error {
 	input := &lambda.DeleteFunctionInput{
 		FunctionName: aws.String(name),
 	}
-	if _, err := l.svc.DeleteFunction(input); err != nil {
+	debugRequest(input)
+	result, err := l.svc.DeleteFunction(input)
+	if err != nil {
 		l.errorLog(err)
 		return err
 	}
+	debugRequest(result)
 	l.log.Infof("Function %s deleted from AWS\n", name)
 	return nil
 }
@@ -124,11 +127,13 @@ func (l *LambdaRequest) CreateFunction(fn *entity.Function, zipBytes []byte) (st
 		Runtime:      aws.String("go1.x"),
 		Timeout:      aws.Int64(fn.Timeout),
 	}
+	debugRequest(input)
 	result, err := l.svc.CreateFunction(input)
 	if err != nil {
 		l.errorLog(err)
 		return "", err
 	}
+	debugRequest(result)
 	return *result.FunctionArn, nil
 }
 
@@ -142,11 +147,13 @@ func (l *LambdaRequest) UpdateFunction(fn *entity.Function, zipBytes []byte) (st
 		ZipFile:      zipBytes,
 	}
 
+	debugRequest(input)
 	result, err := l.svc.UpdateFunctionCode(input)
 	if err != nil {
 		l.errorLog(err)
 		return "", err
 	}
+	debugRequest(result)
 	return *result.FunctionArn, nil
 }
 
@@ -165,10 +172,13 @@ func (l *LambdaRequest) AddS3Permission(name, bucketName string) error {
 		FunctionName:  aws.String(name),
 		StatementId:   aws.String(generateStatementId("s3")),
 	}
-	if _, err := l.svc.AddPermission(input); err != nil {
+	debugRequest(input)
+	result, err := l.svc.AddPermission(input)
+	if err != nil {
 		l.errorLog(err)
 		return err
 	}
+	debugRequest(result)
 	l.log.Info("Permission added successfully.")
 	return nil
 }
@@ -182,13 +192,13 @@ func (l *LambdaRequest) AddAPIGatewayPermission(name, apiArn string) error {
 		FunctionName: aws.String(name),
 		StatementId:  aws.String(generateStatementId("apigateway")),
 	}
-	fmt.Println(input)
-	if r, err := l.svc.AddPermission(input); err != nil {
+	debugRequest(input)
+	result, err := l.svc.AddPermission(input)
+	if err != nil {
 		l.errorLog(err)
 		return err
-	} else {
-		fmt.Println(r)
 	}
+	debugRequest(result)
 	l.log.Info("Permission added successfully.")
 	return nil
 }
@@ -198,11 +208,13 @@ func (l *LambdaRequest) GetFunction(name string) (*lambda.FunctionConfiguration,
 	input := &lambda.GetFunctionInput{
 		FunctionName: aws.String(name),
 	}
+	debugRequest(input)
 	result, err := l.svc.GetFunction(input)
 	if err != nil {
 		l.errorLog(err, lambda.ErrCodeResourceNotFoundException)
 		return nil, err
 	}
+	debugRequest(result)
 	return result.Configuration, nil
 }
 
@@ -213,10 +225,13 @@ func (l *LambdaRequest) UpdateFunctionConfiguration(fn *entity.Function) error {
 		MemorySize:   aws.Int64(fn.MemorySize),
 		Timeout:      aws.Int64(fn.Timeout),
 	}
-	if _, err := l.svc.UpdateFunctionConfiguration(input); err != nil {
+	debugRequest(input)
+	result, err := l.svc.UpdateFunctionConfiguration(input)
+	if err != nil {
 		l.errorLog(err)
 		return err
 	}
+	debugRequest(result)
 	l.log.Info("Function configuration has been updated.")
 	return nil
 }
@@ -226,11 +241,13 @@ func (l *LambdaRequest) InvokeFunction(name string, payload []byte) error {
 		FunctionName: aws.String(name),
 		Payload:      payload,
 	}
+	debugRequest(input)
 	result, err := l.svc.Invoke(input)
 	if err != nil {
 		l.errorLog(err)
 		return err
 	}
+	debugRequest(result)
 	if result.FunctionError != nil {
 		l.log.Warnf("Function invoked on version: %s and handed error\n", *result.ExecutedVersion)
 	} else {

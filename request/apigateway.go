@@ -74,11 +74,13 @@ func (a *APIGatewayRequest) CreateRestAPI(name string) (string, error) {
 			fmt.Sprintf("Managed by ginger, created at %s", time.Now().Format("2006-01-02: 15:04:05")),
 		),
 	}
+	debugRequest(input)
 	result, err := a.svc.CreateRestApi(input)
 	if err != nil {
 		a.errorLog(err)
 		return "", err
 	}
+	debugRequest(result)
 	a.log.Infof("REST API created successfully. Id is %s\n", *result.Id)
 	return *result.Id, nil
 }
@@ -87,11 +89,13 @@ func (a *APIGatewayRequest) ResourceExists(restId, resourceId string) bool {
 	input := &apigateway.GetResourcesInput{
 		RestApiId: aws.String(restId),
 	}
+	debugRequest(input)
 	result, err := a.svc.GetResources(input)
 	if err != nil {
 		a.errorLog(err, apigateway.ErrCodeNotFoundException)
 		return false
 	}
+	debugRequest(result)
 	for _, item := range result.Items {
 		if *item.Id == resourceId {
 			return true
@@ -105,11 +109,13 @@ func (a *APIGatewayRequest) GetResourceIdByPath(restId, path string) (string, er
 	input := &apigateway.GetResourcesInput{
 		RestApiId: aws.String(restId),
 	}
+	debugRequest(input)
 	result, err := a.svc.GetResources(input)
 	if err != nil {
 		a.errorLog(err)
 		return "", err
 	}
+	debugRequest(result)
 	for _, item := range result.Items {
 		if formatProxyPath(*item.Path) == path {
 			return *item.Id, nil
@@ -125,11 +131,13 @@ func (a *APIGatewayRequest) CreateResource(restId, parentId, pathPart string) (s
 		PathPart:  aws.String(pathPart),
 		RestApiId: aws.String(restId),
 	}
+	debugRequest(input)
 	result, err := a.svc.CreateResource(input)
 	if err != nil {
 		a.errorLog(err)
 		return "", err
 	}
+	debugRequest(result)
 	a.log.Infof("Resource created successfully. Id is %s\n", *result.Id)
 	return *result.Id, nil
 }
@@ -183,11 +191,13 @@ func (a *APIGatewayRequest) PutMethod(restId, resourceId, httpMethod string) err
 		ResourceId:        aws.String(resourceId),
 		RestApiId:         aws.String(restId),
 	}
-	fmt.Println(input)
-	if _, err := a.svc.PutMethod(input); err != nil {
+	debugRequest(input)
+	result, err := a.svc.PutMethod(input)
+	if err != nil {
 		a.errorLog(err, apigateway.ErrCodeConflictException)
 		return err
 	}
+	debugRequest(result)
 	a.log.Info("Put method successfully.")
 	return nil
 }
@@ -227,13 +237,13 @@ func (a *APIGatewayRequest) putLambdaIntegration(restId, resourceId, httpMethod,
 		RestApiId:             aws.String(restId),
 		IntegrationHttpMethod: aws.String("POST"),
 	}
-	fmt.Println(input)
-	if r, err := a.svc.PutIntegration(input); err != nil {
+	debugRequest(input)
+	result, err := a.svc.PutIntegration(input)
+	if err != nil {
 		a.errorLog(err)
 		return err
-	} else {
-		fmt.Println(r)
 	}
+	debugRequest(result)
 	// Add permision to lambda
 	account, err := NewSts(a.config).GetAccount()
 	if err != nil {
@@ -253,10 +263,13 @@ func (a *APIGatewayRequest) Deploy(restId, stage string) error {
 		StageDescription: aws.String("This stage is managed by ginger"),
 		RestApiId:        aws.String(restId),
 	}
-	if _, err := a.svc.CreateDeployment(input); err != nil {
+	debugRequest(input)
+	result, err := a.svc.CreateDeployment(input)
+	if err != nil {
 		a.errorLog(err)
 		return err
 	}
+	debugRequest(result)
 	a.log.Infof("Stage %s deployed successfully.\n", stage)
 	return nil
 }
@@ -266,10 +279,13 @@ func (a *APIGatewayRequest) DeleteRestApi(restId string) error {
 	input := &apigateway.DeleteRestApiInput{
 		RestApiId: aws.String(restId),
 	}
-	if _, err := a.svc.DeleteRestApi(input); err != nil {
+	debugRequest(input)
+	result, err := a.svc.DeleteRestApi(input)
+	if err != nil {
 		a.errorLog(err)
 		return err
 	}
+	debugRequest(result)
 	a.log.Info("REST API deleted successfully.")
 	return nil
 }
@@ -280,10 +296,13 @@ func (a *APIGatewayRequest) DeleteResource(restId, resourceId string) error {
 		RestApiId:  aws.String(restId),
 		ResourceId: aws.String(resourceId),
 	}
-	if _, err := a.svc.DeleteResource(input); err != nil {
+	debugRequest(input)
+	result, err := a.svc.DeleteResource(input)
+	if err != nil {
 		a.errorLog(err)
 		return err
 	}
+	debugRequest(result)
 	a.log.Info("Resource deleted successfully.")
 	return nil
 }
@@ -295,10 +314,13 @@ func (a *APIGatewayRequest) DeleteMethod(restId, resourceId string) error {
 		RestApiId:  aws.String(restId),
 		ResourceId: aws.String(resourceId),
 	}
-	if _, err := a.svc.DeleteMethod(input); err != nil {
+	debugRequest(input)
+	result, err := a.svc.DeleteMethod(input)
+	if err != nil {
 		a.errorLog(err)
 		return err
 	}
+	debugRequest(result)
 	a.log.Info("Method deleted successfully.")
 	return nil
 }
@@ -310,10 +332,13 @@ func (a *APIGatewayRequest) DeleteIntegration(restId, resourceId string) error {
 		RestApiId:  aws.String(restId),
 		ResourceId: aws.String(resourceId),
 	}
-	if _, err := a.svc.DeleteIntegration(input); err != nil {
+	debugRequest(input)
+	result, err := a.svc.DeleteIntegration(input)
+	if err != nil {
 		a.errorLog(err)
 		return err
 	}
+	debugRequest(result)
 	a.log.Info("Integration deleted successfully.")
 	return nil
 }

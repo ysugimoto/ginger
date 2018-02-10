@@ -179,7 +179,7 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 	lambda := request.NewLambda(c)
 	f.log.Print("Checking lambda function exintence...")
 	if lambda.FunctionExists(name) {
-		if input.Bool("Function exists on AWS. Also delete from there?") {
+		if ctx.Has("force") || input.Bool("Function exists on AWS. Also delete from there?") {
 			if err := lambda.DeleteFunction(name); err != nil {
 				f.log.Error("Failed to delete from AWS. Please delete manually.")
 			}

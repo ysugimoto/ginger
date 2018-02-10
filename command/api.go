@@ -130,7 +130,7 @@ func (a *APIGateway) deleteEndpoint(c *config.Config, ctx *args.Context) error {
 		return exception("Endpoint %s does not defined.\n", path)
 	}
 
-	if !input.Bool("Subpath also removed. Are you sure?") {
+	if !ctx.Has("force") && !input.Bool("Subpath also removed. Are you sure?") {
 		a.log.Warn("Aborted.")
 		return nil
 	}
@@ -170,7 +170,7 @@ func (a *APIGateway) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 	data := ctx.String("data")
 	stage := ctx.String("stage")
 	host := fmt.Sprintf("%s.execute-api.%s.amazonaws.com", c.API.RestId, c.Project.Region)
-	callUrl := fmt.Sprintf("https://%s/%s%s", host, c.API.RestId, c.Project.Region, stage, path)
+	callUrl := fmt.Sprintf("https://%s/%s%s/_invoke", host, stage, path)
 
 	a.log.Printf("Send HTTP request to %s\n", callUrl)
 
