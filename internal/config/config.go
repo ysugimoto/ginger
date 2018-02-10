@@ -14,6 +14,9 @@ import (
 
 var mu sync.Mutex
 
+// Load loads configuration and map to Config struct.
+// this function always returns although the config file didn't exist.
+// Then you can confirm as Exists() on config file exists or not.
 func Load() *Config {
 	cwd, _ := os.Getwd()
 	c := &Config{
@@ -35,10 +38,13 @@ func Load() *Config {
 			os.Exit(1)
 		}
 	}
+	// Resources need to sort by short paths.
 	c.API.Sort()
 	return c
 }
 
+// Config is the struct which maps configuration file into this.
+// Ensure call Write() to update configuration.
 type Config struct {
 	Root         string `toml:"-"`
 	Path         string `toml:"-"`
@@ -52,10 +58,12 @@ type Config struct {
 	API       entity.API       `toml:"api"`
 }
 
+// Exists() returns bool which config file exists or not.
 func (c *Config) Exists() bool {
 	return c.exists
 }
 
+// Write() writes configuration to file.
 func (c *Config) Write() {
 	mu.Lock()
 	defer mu.Unlock()

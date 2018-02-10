@@ -1,5 +1,6 @@
 package entity
 
+// Resource is the entity struct which maps 'api.resources' slice in configuration.
 type Resource struct {
 	Id          string       `toml:"id"`
 	Path        string       `toml:"path"`

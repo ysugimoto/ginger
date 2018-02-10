@@ -30,6 +30,9 @@ const (
 	FUNCTION_HELP   = "help"
 )
 
+// AWS Lambda function operation command struct
+// This struct will be dispatched on "ginger fn/funtion" subcommand.
+// This command operates with above constant string.
 type Function struct {
 	Command
 	log *logger.Logger
@@ -41,6 +44,7 @@ func NewFunction() *Function {
 	}
 }
 
+// Show function command help.
 func (f *Function) Help() string {
 	return `
 funtion - (AWS Lambda) management command.
@@ -66,6 +70,7 @@ Options:
 `
 }
 
+// Run the command.
 func (f *Function) Run(ctx *args.Context) {
 	c := config.Load()
 	if !c.Exists() {
@@ -99,6 +104,7 @@ func (f *Function) Run(ctx *args.Context) {
 	}
 }
 
+// createFunction creates new function in local.
 func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
@@ -135,6 +141,7 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	return nil
 }
 
+// buildTemplate makes lambda function boilterplace from supplied arguments.
 func (f *Function) buildTemplate(name, eventSource string) []byte {
 	tmpl, _ := assets.Asset("main.go.template")
 	binds := []interface{}{}
@@ -171,6 +178,8 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 	return []byte(fmt.Sprintf(string(tmpl), binds...))
 }
 
+// deleteFunction deletes function.
+// If function has been deployed on AWS Lambda, also delete it.
 func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
@@ -200,6 +209,8 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 	return nil
 }
 
+// configFunction modifies function configuration.
+// We can modifies memorysize and timeout.
 func (f *Function) configFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
@@ -221,6 +232,8 @@ func (f *Function) configFunction(c *config.Config, ctx *args.Context) error {
 	return lambda.UpdateFunctionConfiguration(fn)
 }
 
+// invokeFunction invokes lambda function which deployed in AWS.
+// Make sure function is deployed to AWS before call it.
 func (f *Function) invokeFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
@@ -252,6 +265,7 @@ func (f *Function) invokeFunction(c *config.Config, ctx *args.Context) error {
 	return nil
 }
 
+// listFunction shows registered functions.
 func (f *Function) listFunction(c *config.Config, ctx *args.Context) error {
 	t, err := tty.Open()
 	if err != nil {

@@ -13,10 +13,12 @@ import (
 
 var debug string = ""
 
+// generateStatementId() generated unique statement string.
 func generateStatementId(sType string) string {
 	return fmt.Sprintf("ginger-statement-%s-%d", sType, time.Now().UnixNano())
 }
 
+// Create common AWS session.
 func createAWSSession(c *config.Config) *session.Session {
 	conf := aws.NewConfig().WithRegion(c.Project.Region)
 	if c.Project.Profile != "" {
@@ -27,6 +29,7 @@ func createAWSSession(c *config.Config) *session.Session {
 	return session.New(conf)
 }
 
+// debug print if enables.
 func debugRequest(obj fmt.Stringer) {
 	if debug != "enable" {
 		return

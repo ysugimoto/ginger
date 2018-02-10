@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+// Bool works confirmation on input accepts 'y' or 'n' and returns bool.
+// If input is 'y', returns true, otherwise returns false.
 func Bool(m string) bool {
 	var input string
 LOOP:

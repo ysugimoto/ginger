@@ -6,6 +6,7 @@ import (
 	"github.com/ysugimoto/go-args"
 )
 
+// Help is the struct that displays global command usage.
 type Help struct {
 	Command
 }

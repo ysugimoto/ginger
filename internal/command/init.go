@@ -15,6 +15,9 @@ import (
 	"github.com/ysugimoto/ginger/internal/logger"
 )
 
+// Init is the struct for initalize ginger project.
+// This command generates config file and some
+// directory structure.
 type Init struct {
 	Command
 	log *logger.Logger
@@ -26,10 +29,12 @@ func NewInit() *Init {
 	}
 }
 
+// Display init command help.
 func (i *Init) Help() string {
 	return "No Help"
 }
 
+// Run the init command.
 func (i *Init) Run(ctx *args.Context) {
 	c := config.Load()
 	if c.Exists() {
@@ -78,6 +83,7 @@ func (i *Init) Run(ctx *args.Context) {
 	i.log.Info("ginger initalized successfully!")
 }
 
+// Try to get region from supplied profile.
 func (i *Init) regionFromProfile(profile string) string {
 	var sess *session.Session
 	if profile != "" {

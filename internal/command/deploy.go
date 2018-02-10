@@ -24,6 +24,8 @@ const (
 	DEPLOY_HELP     = "help"
 )
 
+// Deploy is the struct that manages function and api deployment.
+// deploy syncs between local cofiguration and AWS platform.
 type Deploy struct {
 	Command
 	log *logger.Logger
@@ -35,6 +37,7 @@ func NewDeploy() *Deploy {
 	}
 }
 
+// Show deloy command help
 func (d *Deploy) Help() string {
 	return `
 deploy - Deploy management functions and apis.
@@ -54,6 +57,7 @@ Options:
 `
 }
 
+// Run the deploy command
 func (d *Deploy) Run(ctx *args.Context) {
 	c := config.Load()
 	if !c.Exists() {
@@ -87,6 +91,7 @@ func (d *Deploy) Run(ctx *args.Context) {
 	}
 }
 
+// deployFunction deploys functions to AWS Lambda.
 func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 	if c.Project.LambdaExecutionRole == "" {
 		d.log.Warn("Lambda execution role isn't set. Run the 'ginger config --role [role-name]' to set it.")
@@ -130,6 +135,7 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 	return nil
 }
 
+// archive archives built application binary to zip.
 func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	z := zip.NewWriter(buf)
@@ -153,6 +159,7 @@ func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// deployAPI deploys resources to AWS APIGateway.
 func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
 	d.log.AddNamespace("api")
 	api := request.NewAPIGateway(c)

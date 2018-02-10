@@ -28,6 +28,9 @@ const (
 	API_HELP   = "help"
 )
 
+// AWS APIGateway REST API operation command struct
+// This struct will be dispatched on "ginger api" subcommand.
+// This command operates with above constant string.
 type APIGateway struct {
 	Command
 	log *logger.Logger
@@ -39,6 +42,7 @@ func NewAPI() *APIGateway {
 	}
 }
 
+// Display help string
 func (a *APIGateway) Help() string {
 	return `
 api - AWS APIGateway management command.
@@ -64,12 +68,14 @@ Options:
 `
 }
 
+// Run runs command with some options
 func (a *APIGateway) Run(ctx *args.Context) {
 	c := config.Load()
 	if !c.Exists() {
 		a.log.Error("Configuration file could not load. Run `ginger init` before.")
 		return
 	}
+
 	var err error
 	defer func() {
 		if err != nil {
@@ -79,6 +85,7 @@ func (a *APIGateway) Run(ctx *args.Context) {
 		c.API.Sort()
 		c.Write()
 	}()
+
 	switch ctx.At(1) {
 	case API_CREATE:
 		err = a.createEndpoint(c, ctx)
@@ -97,6 +104,8 @@ func (a *APIGateway) Run(ctx *args.Context) {
 	}
 }
 
+// createEndpoint creates new resource by supplied path
+// -p, --path options is required.
 func (a *APIGateway) createEndpoint(c *config.Config, ctx *args.Context) error {
 	path := ctx.String("path")
 	if path == "" {
@@ -118,6 +127,8 @@ func (a *APIGateway) createEndpoint(c *config.Config, ctx *args.Context) error {
 	return nil
 }
 
+// deleteEndpoint deletes resource by supplied path.
+// Note that if sub-path exists on target path, those paths also will be deleted.
 func (a *APIGateway) deleteEndpoint(c *config.Config, ctx *args.Context) error {
 	if c.API.RestId == "" {
 		return exception("Any REST API isn't created yet.")
@@ -159,6 +170,8 @@ func (a *APIGateway) deleteEndpoint(c *config.Config, ctx *args.Context) error {
 	return nil
 }
 
+// invokeEndpoint invokes resource with HTTP request.
+// Ensure some lambda fucntion integartion has set to handle request. Otherwise request will be failed.
 func (a *APIGateway) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 	path := ctx.String("path")
 	if path == "" {
@@ -171,18 +184,21 @@ func (a *APIGateway) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 	if rs.Id == "" {
 		return exception("Endpoint %s hasn't not deployed yet.\n", path)
 	}
-	method := strings.ToUpper(ctx.String("method"))
-	data := ctx.String("data")
-	stage := ctx.String("stage")
+
+	// Build request
 	host := fmt.Sprintf("%s.execute-api.%s.amazonaws.com", c.API.RestId, c.Project.Region)
-	callUrl := fmt.Sprintf("https://%s/%s%s/_invoke", host, stage, path)
+	callUrl := fmt.Sprintf("https://%s/%s%s/_invoke", host, ctx.String("stage"), path)
 
 	a.log.Printf("Send HTTP request to %s\n", callUrl)
-
-	req, err := http.NewRequest(strings.ToUpper(method), callUrl, strings.NewReader(data))
+	req, err := http.NewRequest(
+		strings.ToUpper(ctx.String("method")),
+		callUrl,
+		strings.NewReader(ctx.String("data")),
+	)
 	if err != nil {
 		return exception("Failed to create HTTP request: %s\n", err.Error())
 	}
+	// Send request with TLS transport because API Gateway always supports TLS connection.
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -204,6 +220,7 @@ func (a *APIGateway) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 	return nil
 }
 
+// linkFunction makes itegration between API Gateway resource and Lambda function
 func (a *APIGateway) linkFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
@@ -221,6 +238,7 @@ func (a *APIGateway) linkFunction(c *config.Config, ctx *args.Context) error {
 
 	rs := c.API.Find(path)
 	if rs.Id != "" && rs.Integration != nil {
+		// If interagraion already exists. need to delete it.
 		inquiry := fmt.Sprintf("%s has already have integration to %s. Override it?", rs.Path, rs.Integration.LambdaFunction)
 		if !input.Bool(inquiry) {
 			return exception("Canceled.")
@@ -238,6 +256,7 @@ func (a *APIGateway) linkFunction(c *config.Config, ctx *args.Context) error {
 	return nil
 }
 
+// listEndpoint shows endpoint list
 func (a *APIGateway) listEndpoint(c *config.Config, ctx *args.Context) error {
 	t, err := tty.Open()
 	if err != nil {
@@ -250,7 +269,7 @@ func (a *APIGateway) listEndpoint(c *config.Config, ctx *args.Context) error {
 	}
 	line := strings.Repeat("=", w)
 	fmt.Println(line)
-	fmt.Printf("%-36s %-16s %-36s %4s\n", "path", "resource id", "linked function", "deployed")
+	fmt.Printf("%-36s %-16s %-36s %4s\n", "Path", "ResourceId", "LinedFunction", "Deployed")
 	fmt.Println(line)
 	for i, r := range c.API.Resources {
 		if !r.UserDefined {

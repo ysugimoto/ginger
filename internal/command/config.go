@@ -7,6 +7,7 @@ import (
 	"github.com/ysugimoto/ginger/internal/logger"
 )
 
+// Config struct is the accept 'ginger config' command.
 type Config struct {
 	Command
 	log *logger.Logger
@@ -18,6 +19,7 @@ func NewConfig() *Config {
 	}
 }
 
+// Show this command help.
 func (c *Config) Help() string {
 	return `
 config - Set or update project confiugration.
@@ -32,6 +34,7 @@ Options:
 `
 }
 
+// Run the config command.
 func (c *Config) Run(ctx *args.Context) {
 	conf := config.Load()
 	if !conf.Exists() {

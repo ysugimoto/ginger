@@ -8,6 +8,7 @@ import (
 	"github.com/ysugimoto/ginger/internal/logger"
 )
 
+// StsRequest is the struct which manages AWS sts service.
 type StsRequest struct {
 	svc    *sts.STS
 	log    *logger.Logger
@@ -22,6 +23,7 @@ func NewSts(c *config.Config) *StsRequest {
 	}
 }
 
+// GetAccount() gets account string by call GetCallerIdentity.
 func (s *StsRequest) GetAccount() (string, error) {
 	input := &sts.GetCallerIdentityInput{}
 	result, err := s.svc.GetCallerIdentity(input)

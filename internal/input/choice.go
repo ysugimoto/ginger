@@ -6,6 +6,7 @@ import (
 	"github.com/ysugimoto/cho"
 )
 
+// Choice displays selection on supplied list.
 func Choice(m string, exacts []string) string {
 	fmt.Println(m)
 	ret := make(chan string, 1)

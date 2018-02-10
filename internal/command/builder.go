@@ -13,6 +13,8 @@ import (
 	"github.com/ysugimoto/ginger/internal/logger"
 )
 
+// builder builds go application dynamically.
+// It's funny go application executes `go build` command :-)
 type builder struct {
 	src  string
 	dest string
@@ -25,6 +27,7 @@ func newBuilder(src, dest string) *builder {
 	}
 }
 
+// build builds go application by each functions
 func (b *builder) build(targets entity.Functions) map[*entity.Function]string {
 	log := logger.WithNamespace("ginger.build")
 	binaries := make(map[*entity.Function]string)
@@ -58,6 +61,8 @@ func (b *builder) build(targets entity.Functions) map[*entity.Function]string {
 	return binaries
 }
 
+// compile compiles go application by `go build` command.
+// Note that runtime in AWS Lambda is linux, so we have to build as linux amd64 target.
 func (b *builder) compile(name string, binChan chan string, errChan chan error) {
 	buffer := new(bytes.Buffer)
 	out := filepath.Join(b.dest, name)

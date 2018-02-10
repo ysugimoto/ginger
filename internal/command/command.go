@@ -20,14 +20,14 @@ const (
 	CONFIG   = "config"
 	FUNCTION = "function"
 	FN       = "fn"
-
-	API = "api"
-
-	CREATE = "create"
-	BUILD  = "build"
-	DEPLOY = "deploy"
+	API      = "api"
+	CREATE   = "create"
+	BUILD    = "build"
+	DEPLOY   = "deploy"
 )
 
+// Command is the interface implemented by structs that can run the command
+// and show help as usage.
 type Command interface {
 	Run(ctx *args.Context)
 	Help() string
@@ -35,6 +35,8 @@ type Command interface {
 
 var environments map[string]string
 
+// On initialize phase, collect the current environments to map inside
+// to override and supplie some values on execute command
 func init() {
 	cwd, _ := os.Getwd()
 	vendorPath := filepath.Join(cwd, "vendor")
@@ -52,6 +54,7 @@ func init() {
 	}
 }
 
+// buildEnv overrides environment variable supplied by argument map.
 func buildEnv(overrides map[string]string) []string {
 	if overrides == nil {
 		overrides = make(map[string]string)
