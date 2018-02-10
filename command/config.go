@@ -35,7 +35,7 @@ func (c *Config) Run(ctx *args.Context) {
 		c.log.Printf("Set AWS region as \"%s\"\n", v)
 	}
 	if v = ctx.String("role"); v != "" {
-		conf.Project.Profile = v
+		conf.Project.LambdaExecutionRole = v
 		c.log.Printf("Set Lambda execution role as \"%s\"\n", v)
 	}
 	c.log.Info("Configuration updated!")

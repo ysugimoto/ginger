@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 
+	"github.com/mattn/go-tty"
+
 	"github.com/ysugimoto/ginger/config"
 	"github.com/ysugimoto/ginger/entity"
 	"github.com/ysugimoto/ginger/input"
@@ -21,6 +23,8 @@ const (
 	API_DELETE = "delete"
 	API_INVOKE = "invoke"
 	API_LINK   = "link"
+	API_DEPLOY = "deploy"
+	API_LIST   = "list"
 )
 
 type APIGateway struct {
@@ -42,7 +46,9 @@ Usage:
 Operation:
   create : Create new endpoint
   delete : Delete endpoint
-  invoke : invoke endpoint
+  invoke : Invoke endpoint
+  deploy : Deploy endpoint
+  list   : List endpoint
 
 Options:
   -p, --path   : [all] Path name
@@ -77,6 +83,10 @@ func (a *APIGateway) Run(ctx *args.Context) {
 		err = a.invokeEndpoint(c, ctx)
 	case API_LINK:
 		err = a.linkFunction(c, ctx)
+	case API_DEPLOY:
+		err = NewDeploy().deployAPI(c, ctx)
+	case API_LIST:
+		err = a.listEndpoint(c, ctx)
 	default:
 		fmt.Println(a.Help())
 	}
@@ -87,10 +97,18 @@ func (a *APIGateway) createEndpoint(c *config.Config, ctx *args.Context) error {
 	if path == "" {
 		return exception("Endpoint path is required. Run with -p, --path option.")
 	} else if c.API.Exists(path) {
-		return exception("Endpoint %s is already exists.\n", path)
+		r := c.API.Find(path)
+		if r.UserDefined {
+			return exception("Endpoint %s is already exists.\n", path)
+		}
+		r.UserDefined = true
+		a.log.Infof("API for path %s created successfully!\n", path)
+		return nil
 	}
 
-	c.API.Resources = append(c.API.Resources, entity.NewResource("", path))
+	r := entity.NewResource("", path)
+	r.UserDefined = true
+	c.API.Resources = append(c.API.Resources, r)
 	a.log.Infof("API for path %s created successfully!\n", path)
 	return nil
 }
@@ -108,6 +126,15 @@ func (a *APIGateway) deleteEndpoint(c *config.Config, ctx *args.Context) error {
 	}
 
 	rs := c.API.Find(path)
+	if !rs.UserDefined {
+		return exception("Endpoint %s does not defined.\n", path)
+	}
+
+	if !input.Bool("Subpath also removed. Are you sure?") {
+		a.log.Warn("Aborted.")
+		return nil
+	}
+
 	api := request.NewAPIGateway(c)
 	if !api.ResourceExists(c.API.RestId, rs.Id) {
 		return exception("Rsource for %s not found on AWS.\n", path)
@@ -115,6 +142,14 @@ func (a *APIGateway) deleteEndpoint(c *config.Config, ctx *args.Context) error {
 		a.log.Error("Failed to delete from AWS. Please delete manually.")
 	}
 	c.API.Remove(path)
+	// Remove recursive
+	for _, r := range c.API.Resources {
+		if !strings.HasPrefix(r.Path, rs.Path) {
+			continue
+		}
+		api.DeleteResource(c.API.RestId, r.Id)
+		c.API.Remove(r.Path)
+	}
 	a.log.Info("Endpoint deleted successfully.")
 	return nil
 }
@@ -188,8 +223,46 @@ func (a *APIGateway) linkFunction(c *config.Config, ctx *args.Context) error {
 		api := request.NewAPIGateway(c)
 		api.DeleteMethod(c.API.RestId, rs.Id)
 		api.DeleteIntegration(c.API.RestId, rs.Id)
+		rs.Integration = nil
 	}
-	rs.Integration.LambdaFunction = name
+
+	rs.Integration = &entity.Integration{
+		LambdaFunction: name,
+	}
 	a.log.Infof("Linked to function %s.\n", name)
+	return nil
+}
+
+func (a *APIGateway) listEndpoint(c *config.Config, ctx *args.Context) error {
+	t, err := tty.Open()
+	if err != nil {
+		return exception("Couldn't open tty")
+	}
+	defer t.Close()
+	w, _, err := t.Size()
+	if err != nil {
+		return exception("Couldn't get tty size")
+	}
+	line := strings.Repeat("=", w)
+	fmt.Println(line)
+	fmt.Printf("%-36s %-16s %-36s %4s\n", "path", "resource id", "linked function", "deployed")
+	fmt.Println(line)
+	for i, r := range c.API.Resources {
+		if !r.UserDefined {
+			continue
+		}
+		d := "no"
+		if r.Id != "" {
+			d = "yes"
+		}
+		f := "-"
+		if r.Integration != nil {
+			f = r.Integration.LambdaFunction
+		}
+		fmt.Printf("%-36s %-16s %-36s %-4s\n", r.Path, r.Id, f, d)
+		if i != len(c.Functions)-1 {
+			fmt.Println(strings.Repeat("-", w))
+		}
+	}
 	return nil
 }

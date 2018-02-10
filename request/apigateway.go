@@ -35,9 +35,15 @@ func NewAPIGateway(c *config.Config) *APIGatewayRequest {
 	}
 }
 
-func (a *APIGatewayRequest) errorLog(err error) {
+func (a *APIGatewayRequest) errorLog(err error, skipCodes ...string) {
 	if aerr, ok := err.(awserr.Error); ok {
-		switch aerr.Code() {
+		code := aerr.Code()
+		for _, c := range skipCodes {
+			if c == code {
+				return
+			}
+		}
+		switch code {
 		case apigateway.ErrCodeUnauthorizedException:
 			a.log.Error(apigateway.ErrCodeUnauthorizedException, aerr.Error())
 		case apigateway.ErrCodeLimitExceededException:
@@ -83,7 +89,7 @@ func (a *APIGatewayRequest) ResourceExists(restId, resourceId string) bool {
 	}
 	result, err := a.svc.GetResources(input)
 	if err != nil {
-		a.errorLog(err)
+		a.errorLog(err, apigateway.ErrCodeNotFoundException)
 		return false
 	}
 	for _, item := range result.Items {
@@ -150,6 +156,12 @@ func (a *APIGatewayRequest) CreateResourceRecursive(restId, path string) (err er
 }
 
 func (a *APIGatewayRequest) PutIntegration(restId string, r *entity.Resource) (err error) {
+	fn := a.config.Functions.Find(r.Integration.LambdaFunction)
+	if fn == nil {
+		err = fmt.Errorf("Function %s couldn't find in your project.\n", r.Integration.LambdaFunction)
+		a.errorLog(err)
+		return err
+	}
 	// Need to add extra "/{proxy+}" resource for lambda integration
 	if r.Integration.Id == "" {
 		r.Integration.Id, err = a.CreateResource(restId, r.Id, "{proxy+}")
@@ -157,15 +169,7 @@ func (a *APIGatewayRequest) PutIntegration(restId string, r *entity.Resource) (e
 			return err
 		}
 	}
-	if err = a.PutMethod(restId, r.Integration.Id, "ANY"); err != nil {
-		return err
-	}
-	fn := a.config.Functions.Find(r.Integration.LambdaFunction)
-	if fn == nil {
-		err = fmt.Errorf("Function %s couldn't find in your project.\n", r.Integration.LambdaFunction)
-		a.errorLog(err)
-		return err
-	}
+	a.PutMethod(restId, r.Integration.Id, "ANY")
 	return a.putLambdaIntegration(restId, r.Integration.Id, "ANY", r.Path+"/{proxy+}", fn)
 }
 
@@ -179,8 +183,9 @@ func (a *APIGatewayRequest) PutMethod(restId, resourceId, httpMethod string) err
 		ResourceId:        aws.String(resourceId),
 		RestApiId:         aws.String(restId),
 	}
+	fmt.Println(input)
 	if _, err := a.svc.PutMethod(input); err != nil {
-		a.errorLog(err)
+		a.errorLog(err, apigateway.ErrCodeConflictException)
 		return err
 	}
 	a.log.Info("Put method successfully.")
@@ -197,7 +202,7 @@ func (a *APIGatewayRequest) generateIntegrationUri(lambdaArn *string) string {
 
 func (a *APIGatewayRequest) generateSourceArn(account, restId, httpMethod, path string) string {
 	return fmt.Sprintf(
-		"arn:aws:execute-api:%s:%s:%s/*/%s/%s",
+		"arn:aws:execute-api:%s:%s:%s/*/%s%s/{proxy+}",
 		a.config.Project.Region,
 		account,
 		restId,
@@ -222,9 +227,12 @@ func (a *APIGatewayRequest) putLambdaIntegration(restId, resourceId, httpMethod,
 		RestApiId:             aws.String(restId),
 		IntegrationHttpMethod: aws.String("POST"),
 	}
-	if _, err := a.svc.PutIntegration(input); err != nil {
+	fmt.Println(input)
+	if r, err := a.svc.PutIntegration(input); err != nil {
 		a.errorLog(err)
 		return err
+	} else {
+		fmt.Println(r)
 	}
 	// Add permision to lambda
 	account, err := NewSts(a.config).GetAccount()

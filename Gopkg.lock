@@ -39,8 +39,8 @@
     "service/lambda",
     "service/sts"
   ]
-  revision = "0cbaf57ea311890e62f0b01652529295079e9e95"
-  version = "v1.12.71"
+  revision = "82eadef012f77590875babb177c60878727821c0"
+  version = "v1.12.74"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -116,6 +116,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3fd5f1438a89c8ea3f3228cec5a7c381a2bdbcc80790adf6eba143946601fc78"
+  inputs-digest = "edac77eabda00bdffbd99c87724a7d21eead0d07c2b2c5069a4d59392721b54f"
   solver-name = "gps-cdcl"
   solver-version = 1

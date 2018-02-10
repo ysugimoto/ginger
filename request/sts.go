@@ -32,6 +32,5 @@ func (s *StsRequest) GetAccount() (string, error) {
 		}
 		return "", err
 	}
-	s.log.Infof("Account found: %s\n", *result.Account)
 	return *result.Account, nil
 }

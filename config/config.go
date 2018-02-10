@@ -30,7 +30,7 @@ func Load() *Config {
 	if _, err := os.Stat(c.Path); err == nil {
 		c.exists = true
 		if _, err = toml.DecodeFile(c.Path, c); err != nil {
-			fmt.Println("Syntax error found on configuration file!")
+			fmt.Println("Syntax error found on configuration file!", err)
 			os.Exit(1)
 		}
 	}
@@ -58,7 +58,7 @@ func (c *Config) Exists() bool {
 func (c *Config) Write() {
 	mu.Lock()
 	defer mu.Unlock()
-	fp, _ := os.OpenFile(c.Path, os.O_WRONLY|os.O_CREATE, 0644)
+	fp, _ := os.OpenFile(c.Path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	defer fp.Close()
 	enc := toml.NewEncoder(fp)
 	enc.Encode(c)

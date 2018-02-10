@@ -32,8 +32,6 @@ func (i *Init) Run(ctx *args.Context) {
 		i.log.Warn("Config file found. Project has already initialized.")
 		return
 	}
-	defer c.Write()
-
 	if _, err := os.Stat(c.FunctionPath); err != nil {
 		i.log.Printf("Create functions directory: %s\n", c.FunctionPath)
 		os.Mkdir(c.FunctionPath, 0755)
@@ -51,25 +49,27 @@ func (i *Init) Run(ctx *args.Context) {
 
 	if p := ctx.String("profile"); p != "" {
 		project.Profile = p
+		i.log.Printf("Profile set as %s\n", project.Profile)
 	}
 	if r := i.regionFromProfile(project.Profile); r != "" {
 		project.Region = r
+		i.log.Printf("Region set as %s\n", project.Region)
 	}
 	if r := ctx.String("region"); r != "" {
 		project.Region = r
+		i.log.Printf("Region set as %s\n", project.Region)
 	}
 	if r := ctx.String("role"); r != "" {
 		project.LambdaExecutionRole = r
 	}
 
-	i.log.Printf("Region set as %s\n", project.Region)
-	i.log.Printf("Profile set as %s\n", project.Profile)
 	if project.LambdaExecutionRole == "" {
 		i.log.Warn("Lambda Execution Role isn't set. Please run 'ginger config --role [role name]' before you deploy function.")
 	} else {
 		i.log.Printf("Lambda role set as %s\n", project.LambdaExecutionRole)
 	}
 	c.Project = project
+	c.Write()
 	NewInstall().Run(ctx)
 	i.log.Info("ginger initalized successfully!")
 }

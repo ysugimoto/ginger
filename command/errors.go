@@ -2,13 +2,14 @@ package command
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/pkg/errors"
 )
 
+var debug string = ""
+
 func debugTrace(err error) {
-	if d := os.Getenv("DEBUG"); d == "" {
+	if debug != "enable" {
 		return
 	}
 	fmt.Println("StackTrace =====================")

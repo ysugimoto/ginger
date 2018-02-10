@@ -19,6 +19,7 @@ const (
 	DEPLOY_FUNCTION = "function"
 	DEPLOY_FN       = "fn"
 	DEPLOY_API      = "api"
+	DEPLOY_ALL      = "all"
 )
 
 type Deploy struct {
@@ -40,9 +41,9 @@ Usage:
 Subcommand:
   function: Deploy functions (default: all, one of function if --name option supplied)
   api:      Deploy apis (default: all, one of path if --name option supplied)
+  all:      Deploy both of functions and apis
 
 Options:
-  --all:   Deploy all functions/apis
   --name:  Target fucntion name
   --stage: Target api stage
 `
@@ -65,31 +66,28 @@ func (d *Deploy) Run(ctx *args.Context) {
 
 	switch ctx.At(1) {
 	case DEPLOY_FUNCTION, DEPLOY_FN:
-		if c.Project.LambdaExecutionRole == "" {
-			d.log.Warn("Lambda execution role isn't set. Run the 'ginger config --role [role-name]' to set it.")
-			return
-		}
-		d.log.AddNamespace("function")
 		err = d.deployFunction(c, ctx)
 	case DEPLOY_API:
-		d.log.AddNamespace("api")
+		err = d.deployAPI(c, ctx)
+	case DEPLOY_ALL:
+		d.log.AddNamespace("all")
+		d.log.Print("========== Function Deployment ==========")
+		if err = d.deployFunction(c, ctx); err != nil {
+			return
+		}
+		d.log.Print("========== API Deployment ==========")
 		err = d.deployAPI(c, ctx)
 	default:
-		if ctx.Has("all") {
-			d.log.AddNamespace("all")
-			d.log.Print("========== Function Deployment ==========")
-			if err = d.deployFunction(c, ctx); err != nil {
-				return
-			}
-			d.log.Print("========== API Deployment ==========")
-			err = d.deployAPI(c, ctx)
-		} else {
-			fmt.Println(d.Help())
-		}
+		fmt.Println(d.Help())
 	}
 }
 
 func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
+	if c.Project.LambdaExecutionRole == "" {
+		d.log.Warn("Lambda execution role isn't set. Run the 'ginger config --role [role-name]' to set it.")
+		return nil
+	}
+	d.log.AddNamespace("function")
 	targets := c.Functions
 	if ctx.Has("name") {
 		name := ctx.String("name")
@@ -151,6 +149,7 @@ func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
 }
 
 func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
+	d.log.AddNamespace("api")
 	api := request.NewAPIGateway(c)
 	restId := c.API.RestId
 
@@ -176,12 +175,18 @@ func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
 
 	for _, r := range c.API.Resources {
 		// If "Id" exists, the resource has already been deployed
-		if r.Id != "" {
-			continue
+		if r.Id != "" && api.ResourceExists(restId, r.Id) {
+			d.log.Infof("Endpoint %s has already deployed.\n", r.Path)
+		} else {
+			api.CreateResourceRecursive(restId, r.Path)
 		}
-		if err = api.CreateResourceRecursive(restId, r.Path); err != nil {
-			return
+		if r.Integration != nil {
+			api.PutIntegration(restId, r)
 		}
+	}
+
+	if s := ctx.String("stage"); s != "" {
+		api.Deploy(restId, s)
 	}
 	return
 }

@@ -10,6 +10,8 @@ import (
 	"github.com/ysugimoto/ginger/config"
 )
 
+var debug string = ""
+
 func generateStatementId(sType string) string {
 	return fmt.Sprintf("ginger-statement-%s-%d", sType, time.Now().UnixNano())
 }
@@ -22,4 +24,11 @@ func createAWSSession(c *config.Config) *session.Session {
 		)
 	}
 	return session.New(conf)
+}
+
+func debugRequest(obj fmt.Stringer) {
+	if debug != "enable" {
+		return
+	}
+	fmt.Println("[DEBUG] ", obj)
 }

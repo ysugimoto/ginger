@@ -25,9 +25,15 @@ func NewLambda(c *config.Config) *LambdaRequest {
 	}
 }
 
-func (l *LambdaRequest) errorLog(err error) {
+func (l *LambdaRequest) errorLog(err error, skipCodes ...string) {
 	if aerr, ok := err.(awserr.Error); ok {
-		switch aerr.Code() {
+		code := aerr.Code()
+		for _, c := range skipCodes {
+			if c == code {
+				return
+			}
+		}
+		switch code {
 		case lambda.ErrCodeServiceException:
 			l.log.Error(lambda.ErrCodeServiceException, aerr.Error())
 		case lambda.ErrCodeResourceNotFoundException:
@@ -91,7 +97,7 @@ func (l *LambdaRequest) DeleteFunction(name string) error {
 		l.errorLog(err)
 		return err
 	}
-	l.log.Infof("Function %s deleted from AWS", name)
+	l.log.Infof("Function %s deleted from AWS\n", name)
 	return nil
 }
 
@@ -145,13 +151,14 @@ func (l *LambdaRequest) UpdateFunction(fn *entity.Function, zipBytes []byte) (st
 }
 
 func (l *LambdaRequest) AddS3Permission(name, bucketName string) error {
+	l.log.Printf("Add S3 permission for %s...\n", name)
 	sts := NewSts(l.config)
 	account, err := sts.GetAccount()
 	if err != nil {
 		return err
 	}
 	input := &lambda.AddPermissionInput{
-		Action:        aws.String("lambda.InvokeFunction"),
+		Action:        aws.String("lambda:InvokeFunction"),
 		Principal:     aws.String("s3.amazonaws.com"),
 		SourceArn:     aws.String(fmt.Sprintf("arn:aws:s3:::%s", bucketName)),
 		SourceAccount: aws.String(account),
@@ -162,27 +169,27 @@ func (l *LambdaRequest) AddS3Permission(name, bucketName string) error {
 		l.errorLog(err)
 		return err
 	}
+	l.log.Info("Permission added successfully.")
 	return nil
 }
 
 func (l *LambdaRequest) AddAPIGatewayPermission(name, apiArn string) error {
-	sts := NewSts(l.config)
-	account, err := sts.GetAccount()
-	if err != nil {
-		return err
-	}
+	l.log.Printf("Add API Gateway permission for %s...\n", name)
 	input := &lambda.AddPermissionInput{
-		Action:        aws.String("lambda.InvokeFunction"),
-		Principal:     aws.String("apigateway.amazonaws.com"),
-		SourceArn:     aws.String(apiArn),
-		SourceAccount: aws.String(account),
-		FunctionName:  aws.String(name),
-		StatementId:   aws.String(generateStatementId("apigateway")),
+		Action:       aws.String("lambda:InvokeFunction"),
+		Principal:    aws.String("apigateway.amazonaws.com"),
+		SourceArn:    aws.String(apiArn),
+		FunctionName: aws.String(name),
+		StatementId:  aws.String(generateStatementId("apigateway")),
 	}
-	if _, err := l.svc.AddPermission(input); err != nil {
+	fmt.Println(input)
+	if r, err := l.svc.AddPermission(input); err != nil {
 		l.errorLog(err)
 		return err
+	} else {
+		fmt.Println(r)
 	}
+	l.log.Info("Permission added successfully.")
 	return nil
 }
 
@@ -193,7 +200,7 @@ func (l *LambdaRequest) GetFunction(name string) (*lambda.FunctionConfiguration,
 	}
 	result, err := l.svc.GetFunction(input)
 	if err != nil {
-		l.errorLog(err)
+		l.errorLog(err, lambda.ErrCodeResourceNotFoundException)
 		return nil, err
 	}
 	return result.Configuration, nil
@@ -210,7 +217,7 @@ func (l *LambdaRequest) UpdateFunctionConfiguration(fn *entity.Function) error {
 		l.errorLog(err)
 		return err
 	}
-	l.log.Infof("Function configuration has been updated.")
+	l.log.Info("Function configuration has been updated.")
 	return nil
 }
 
@@ -229,6 +236,7 @@ func (l *LambdaRequest) InvokeFunction(name string, payload []byte) error {
 	} else {
 		l.log.Infof("Function invoked on version: %s and succeeded\n", *result.ExecutedVersion)
 	}
-	l.log.Print(string(result.Payload))
+
+	fmt.Println(string(result.Payload))
 	return nil
 }

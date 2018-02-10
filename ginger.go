@@ -21,10 +21,10 @@ func main() {
 		Alias("method", "m", "GET").
 		Alias("body", "b", "").
 		Alias("stage", "s", "").
-		Alias("all", "", "").
 		Alias("event", "e", "").
 		Alias("memory", "m", 128).
 		Alias("timeout", "t", 3).
+		Alias("force", "f", nil).
 		Parse(os.Args[1:])
 
 	var cmd command.Command

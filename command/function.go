@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 
 	"github.com/iancoleman/strcase"
+	"github.com/mattn/go-tty"
+
 	"github.com/ysugimoto/ginger/assets"
 	"github.com/ysugimoto/ginger/config"
 	"github.com/ysugimoto/ginger/entity"
@@ -23,6 +25,8 @@ const (
 	FUNCTION_DELETE = "delete"
 	FUNCTION_INVOKE = "invoke"
 	FUNCTION_CONFIG = "config"
+	FUNCTION_DEPLOY = "deploy"
+	FUNCTION_LIST   = "list"
 )
 
 type Function struct {
@@ -45,6 +49,9 @@ Operation:
   create : Create new function
   delete : Delete function
   invoke : Invoke function
+  config : Modify function setting
+  deploy : Deploy functions
+  list   : List functions
 
 Options:
   -n, --name    : [all] Function name (required)
@@ -79,6 +86,10 @@ func (f *Function) Run(ctx *args.Context) {
 		err = f.invokeFunction(c, ctx)
 	case FUNCTION_CONFIG:
 		err = f.configFunction(c, ctx)
+	case FUNCTION_DEPLOY:
+		err = NewDeploy().deployFunction(c, ctx)
+	case FUNCTION_LIST:
+		err = f.listFunction(c, ctx)
 	default:
 		fmt.Println(COMMAND_HEADER + f.Help())
 	}
@@ -91,8 +102,17 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	} else if c.Functions.Exists(name) {
 		return exception("Function already defined.")
 	}
+
+	m := ctx.Int("memory")
+	if m < 128 {
+		return exception("Memory size must be greater than 128.")
+	} else if m%64 > 0 {
+		return exception("Memory size must be multiple of 64.")
+	}
 	fn := &entity.Function{
-		Name: name,
+		Name:       name,
+		MemorySize: int64(m),
+		Timeout:    int64(ctx.Int("timeout")),
 	}
 	fnPath := filepath.Join(c.FunctionPath, name)
 	if err := os.Mkdir(fnPath, 0755); err != nil {
@@ -164,13 +184,15 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 				f.log.Error("Failed to delete from AWS. Please delete manually.")
 			}
 		}
+	} else {
+		f.log.Print("Not found in AWS. Skip it.")
 	}
-	f.log.Printf("Deleting files...")
+	f.log.Print("Deleting files...")
 	if err := os.RemoveAll(filepath.Join(c.FunctionPath, name)); err != nil {
 		return exception("Delete dierectory error: %s", err.Error())
 	}
 	c.Functions = c.Functions.Remove(name)
-	f.log.Infof("Function deleted successfully.")
+	f.log.Info("Function deleted successfully.")
 	return nil
 }
 
@@ -182,8 +204,14 @@ func (f *Function) configFunction(c *config.Config, ctx *args.Context) error {
 		return exception("Function %s does not defined.", name)
 	}
 
+	m := ctx.Int("memory")
+	if m < 128 {
+		return exception("Memory size must be greater than 128.")
+	} else if m%64 > 0 {
+		return exception("Memory size must be multiple of 64.")
+	}
 	fn := c.Functions.Find(name)
-	fn.MemorySize = int64(ctx.Int("memory"))
+	fn.MemorySize = int64(m)
 	fn.Timeout = int64(ctx.Int("timeout"))
 	lambda := request.NewLambda(c)
 	return lambda.UpdateFunctionConfiguration(fn)
@@ -217,5 +245,32 @@ func (f *Function) invokeFunction(c *config.Config, ctx *args.Context) error {
 	}
 
 	lambda.InvokeFunction(name, payload)
+	return nil
+}
+
+func (f *Function) listFunction(c *config.Config, ctx *args.Context) error {
+	t, err := tty.Open()
+	if err != nil {
+		return exception("Couldn't open tty")
+	}
+	defer t.Close()
+	w, _, err := t.Size()
+	if err != nil {
+		return exception("Couldn't get tty size")
+	}
+	line := strings.Repeat("=", w)
+	fmt.Println(line)
+	fmt.Printf("%-36s %-16s %-16s %-4s\n", "name", "memory", "timeout", "deployed")
+	fmt.Println(line)
+	for i, fn := range c.Functions {
+		d := "no"
+		if fn.Arn != "" {
+			d = "yes"
+		}
+		fmt.Printf("%-36s %-16s %-16s %-4s\n", fn.Name, fmt.Sprintf("%d MB", fn.MemorySize), fmt.Sprintf("%d sec", fn.Timeout), d)
+		if i != len(c.Functions)-1 {
+			fmt.Println(strings.Repeat("-", w))
+		}
+	}
 	return nil
 }
