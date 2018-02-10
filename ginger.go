@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ysugimoto/ginger/command"
+	"github.com/ysugimoto/ginger/internal/command"
 	"github.com/ysugimoto/go-args"
 )
 
@@ -41,12 +41,11 @@ func main() {
 		cmd = command.NewAPI()
 	case command.DEPLOY:
 		cmd = command.NewDeploy()
+	default:
+		cmd = command.NewHelp()
 	}
 
-	if cmd == nil {
-		cmd = command.NewHelp()
-		fmt.Println(cmd.Help())
-	} else if ctx.Has("help") {
+	if ctx.Has("help") || ctx.At(1) == "help" {
 		fmt.Println(cmd.Help())
 	} else {
 		cmd.Run(ctx)

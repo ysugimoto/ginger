@@ -1,6 +1,8 @@
 package command
 
 import (
+	"fmt"
+
 	"github.com/ysugimoto/go-args"
 )
 
@@ -13,7 +15,7 @@ func NewHelp() *Help {
 }
 
 func (h *Help) Run(ctx *args.Context) {
-	// noop
+	fmt.Println(h.Help())
 }
 
 func (h *Help) Help() string {

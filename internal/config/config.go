@@ -8,7 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
-	"github.com/ysugimoto/ginger/entity"
+
+	"github.com/ysugimoto/ginger/internal/entity"
 )
 
 var mu sync.Mutex

@@ -8,9 +8,10 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/ysugimoto/ginger/config"
-	"github.com/ysugimoto/ginger/logger"
 	"github.com/ysugimoto/go-args"
+
+	"github.com/ysugimoto/ginger/internal/config"
+	"github.com/ysugimoto/ginger/internal/logger"
 )
 
 var dependencyPackages = []string{
@@ -26,6 +27,10 @@ func NewInstall() *Install {
 	return &Install{
 		log: logger.WithNamespace("ginger.install"),
 	}
+}
+
+func (i *Install) Help() string {
+	return "No Help"
 }
 
 func (i *Install) Run(ctx *args.Context) {

@@ -10,14 +10,14 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/mattn/go-tty"
-
-	"github.com/ysugimoto/ginger/assets"
-	"github.com/ysugimoto/ginger/config"
-	"github.com/ysugimoto/ginger/entity"
-	"github.com/ysugimoto/ginger/input"
-	"github.com/ysugimoto/ginger/logger"
-	"github.com/ysugimoto/ginger/request"
 	"github.com/ysugimoto/go-args"
+
+	"github.com/ysugimoto/ginger/internal/assets"
+	"github.com/ysugimoto/ginger/internal/config"
+	"github.com/ysugimoto/ginger/internal/entity"
+	"github.com/ysugimoto/ginger/internal/input"
+	"github.com/ysugimoto/ginger/internal/logger"
+	"github.com/ysugimoto/ginger/internal/request"
 )
 
 const (
@@ -27,6 +27,7 @@ const (
 	FUNCTION_CONFIG = "config"
 	FUNCTION_DEPLOY = "deploy"
 	FUNCTION_LIST   = "list"
+	FUNCTION_HELP   = "help"
 )
 
 type Function struct {
@@ -42,6 +43,8 @@ func NewFunction() *Function {
 
 func (f *Function) Help() string {
 	return `
+funtion - (AWS Lambda) management command.
+
 Usage:
   $ ginger fn [operation] [options]
 
@@ -52,6 +55,7 @@ Operation:
   config : Modify function setting
   deploy : Deploy functions
   list   : List functions
+  help   : Show this help
 
 Options:
   -n, --name    : [all] Function name (required)
