@@ -18,7 +18,7 @@ It can creates `Serverless` architecture on `AWS` platform.
 
 [url put here]
 
-Move to your `$PATH` directory e.g. `/usr/local/bin`.
+Move binary file to your `$PATH` directory e.g. `/usr/local/bin`.
 
 To see a general usage, run `ginger help` command.
 
@@ -27,7 +27,7 @@ To see a general usage, run `ginger help` command.
 
 ### Setup
 
-At the first, run the `ginger init` command on your project directory:
+At the first, run the `ginger init` command at your project directory:
 
 
 ```
@@ -36,7 +36,7 @@ ginger init
 >>> some output...
 ```
 
-If you want to use (probably almost case yes) external Go package, we suggest you put project directory under the `$GOPATH/src` to enable verndoring.
+If you want to use (probably almost case yes) external Go package, we suggest you put project directory under the `$GOPATH/src` to enable to detect vendor tree.
 
 For example:
 
@@ -57,11 +57,11 @@ The `ginger init` command will work as following:
 
 The `ginger` has three of project configurations. default values are deifned as following tables:
 
-| Configuration Name  | Default Value | Description                                                                          |
-|:-------------------:|:-------------:|:-------------------------------------------------------------------------------------|
-| Profile             | (empty)       | Use profile name on AWS Request. If empty, ginger will use from environment variable |
-| Region              | us-east-1     | AWS region which project use                                                         |
-| LambdaExecutionRole | (empty)       | Set the AWS Lambda execution role                                                    |
+| Configuration Name  | Default Value | Description                                                                           |
+|:-------------------:|:-------------:|:--------------------------------------------------------------------------------------|
+| Profile             | (empty)       | Profile name which is used on AWS Request. If empty, ginger uses environment variable |
+| Region              | us-east-1     | AWS region which project uses                                                         |
+| LambdaExecutionRole | (empty)       | Set the AWS Lambda execution role                                                     |
 
 Above configurations can change through a `config` subcommand:
 
@@ -69,7 +69,7 @@ Above configurations can change through a `config` subcommand:
 ginger config --profile [Profile] --region [Region] --role [LambdaExecutionRole]`
 ```
 
-Note that the `LambdaExecutionRole` is necessary to execute lambda function. Please make sure this value is set and role is valid.
+Note that the `LambdaExecutionRole` is necessary to execute lambda function. Please make sure this value is set and that role is valid to execute Lambda function.
 
 And once you deployed some functions or apis, you __should not__ change the region because when region is changed, function will be created on different regions as same name.
 
@@ -105,10 +105,10 @@ Or `ginger function deploy` is alias of this command, so you can also use it to 
 
 A Lambda function has a couple of settings:
 
-| Name       | Default Value | Description                                                              |
-|:----------:|:-------------:|:-------------------------------------------------------------------------|
-| MemorySize | 128 (MB)      | Function memory size. this value must be above `128`, and multiple of 64 |
-| Timeout    | 3 (Sec)       | Function timeout duration                                                |
+| Name       | Default Value | Description                                                                       |
+|:----------:|:-------------:|:----------------------------------------------------------------------------------|
+| MemorySize | 128 (MB)      | Function memory size. this value must be above `128`, and must be multiple of 64. |
+| Timeout    | 3 (Sec)       | Function timeout duration second.                                                 |
 
 In detail, see the [aws lambda documentation](https://docs.aws.amazon.com/lambda/latest/dg/limits.html)
 
@@ -128,11 +128,11 @@ Once you deployed function to `AWS` by `ginger deploy function` command, you can
 ginger function invoke --name [function name] --event [event source json]
 ```
 
-An `--event` option indicates event source for input of lambda function handler. `ginger` will pass the payload as this options:
+An `--event` option indicates event source for input of lambda function handler. `ginger` gets the payload as following options and pass to the function input:
 
 - If option doesn't exists, pass as _empty payload_
-- If option supplied as string, pass through
-- If option starts with `@`, like `curl`, try to load the file and pass its content
+- If option supplied as string, pass as it is
+- If option starts with `@`, like `curl`, ginger tries to load the file and pass its content
 
 After invocation end, the result print on your terminal.
 
@@ -166,8 +166,8 @@ Command creates resouce which we need, and also create root `REST API` if you ha
 
 if `--stage` option id supplied, ginger tries to create deployment to target stage. Otherwise, only create resources.
 
-Note that the `AWS API Gateway` manages endpoints as `pathpart`, it is part of segment, so we need to create by each seguemnts rescursively.
-But you don't need to care about it because `ginger` creates and manages sub-path on `Ginger.toml`.
+Note that the `AWS API Gateway` manages endpoints as `pathpart`, it is part of segment, so we need to create recursively by each segment.
+But you don't need to care about it because `ginger` creates and manages sub-path automatically and save on `Ginger.toml`.
 
 In detail, see [AWS API Gateway documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-method-settings-method-request.html).
 
@@ -177,7 +177,7 @@ Or `ginger api deploy` is alias of this command, so you can also use it to deplo
 
 The `AWS API Gateway` supports [Lambda Proxy Integration](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-api-as-simple-proxy-for-lambda.html), and `ginger` can manage its feature.
 
-To set up is simple, run `ginger api link` command with function name and endpoint option:
+To set up it, run `ginger api link` command with function name and endpoint option:
 
 ```
 ginger api link --name [function name] --path [endpoint path]
@@ -187,7 +187,7 @@ Then, function and endpoint are linked. After that, when you deploy api to AWS, 
 
 ### Invoke Resource
 
-After you deployed some ednpoints with Lambda integration, you can try to invoke api endpoint via `ginger api invoke`:
+After you deployed some ednpoints with Lambda integration, you can invoke api endpoint via `ginger api invoke`:
 
 ```
 ginger api invoke --path [endpoint path]
