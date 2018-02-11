@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+	"github.com/pkg/errors"
 
 	"github.com/ysugimoto/ginger/internal/entity"
 )
@@ -18,12 +19,17 @@ var mu sync.Mutex
 // this function always returns although the config file didn't exist.
 // Then you can confirm as Exists() on config file exists or not.
 func Load() *Config {
-	cwd, _ := os.Getwd()
+	root, err := findUp()
+	if err != nil {
+		fmt.Println("Unexpected Error", err)
+		os.Exit(1)
+	}
+
 	c := &Config{
-		Root:         cwd,
-		Path:         filepath.Join(cwd, "Ginger.toml"),
-		FunctionPath: filepath.Join(cwd, "functions"),
-		VendorPath:   filepath.Join(cwd, "vendor"),
+		Root:         root,
+		Path:         filepath.Join(root, "Ginger.toml"),
+		FunctionPath: filepath.Join(root, "functions"),
+		VendorPath:   filepath.Join(root, "vendor"),
 		Project:      entity.Project{},
 		Functions:    entity.Functions{},
 		API: entity.API{
@@ -41,6 +47,25 @@ func Load() *Config {
 	// Resources need to sort by short paths.
 	c.API.Sort()
 	return c
+}
+
+// findUp finds ginger project root from current working directory.
+func findUp() (string, error) {
+	path, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		if path == "/" {
+			break
+		}
+		if _, err := os.Stat(filepath.Join(path, "Ginger.toml")); err == nil {
+			return path, nil
+		}
+		path = filepath.Dir(path)
+	}
+	return "", errors.New("Failed to find up configuration file")
 }
 
 // Config is the struct which maps configuration file into this.
