@@ -5,7 +5,7 @@ all: assets
 		-ldflags "-X github.com/ysugimoto/ginger/internal/request.debug=enable -X github.com/ysugimoto/ginger/internal/command.debug=enable" \
 		-o dist/ginger
 
-production: assets
+production:
 	go build -o dist/ginger
 
 assets:

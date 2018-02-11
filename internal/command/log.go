@@ -27,7 +27,7 @@ func NewLog() *Log {
 }
 
 func (l *Log) Help() string {
-	return `
+	return COMMAND_HEADER + `
 log - Tail cloudwatch logs for lambda function.
 
 Usage:

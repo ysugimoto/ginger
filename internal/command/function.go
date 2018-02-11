@@ -31,7 +31,7 @@ const (
 	FUNCTION_LOG    = "log"
 )
 
-// AWS Lambda function operation command struct
+// Function is the struct of AWS Lambda function operation command.
 // This struct will be dispatched on "ginger fn/funtion" subcommand.
 // This command operates with above constant string.
 type Function struct {
@@ -47,7 +47,7 @@ func NewFunction() *Function {
 
 // Show function command help.
 func (f *Function) Help() string {
-	return `
+	return COMMAND_HEADER + `
 funtion - (AWS Lambda) management command.
 
 Usage:
