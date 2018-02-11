@@ -27,8 +27,6 @@ definitions:
            command: |
              cd /go/src/github.com/ysugimoto/ginger
              dep ensure
-             cd vendor/github.com/mattn/go-bindata && go build -o $GOPATH/bin/go-bindata && chmod +x $GOPATH/bin/go-bindata
-             cd /go/src/github.com/ysugimoto/ginger
              make production
         - persist_to_workspace:
            root: /go/src/github.com/ysugimoto/ginger
