@@ -36,6 +36,7 @@
     "private/protocol/restjson",
     "private/protocol/xml/xmlutil",
     "service/apigateway",
+    "service/cloudwatchlogs",
     "service/lambda",
     "service/sts"
   ]
@@ -116,6 +117,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e9199b24d5c0c26ca0feb6a0459132bbb192928a772558cc6c2ac9cd780d4d51"
+  inputs-digest = "766e5c333ba40da9702dd05c300b005b0062c5ff81d3a728be95e6b592bb4e95"
   solver-name = "gps-cdcl"
   solver-version = 1

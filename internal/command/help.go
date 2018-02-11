@@ -38,6 +38,7 @@ SubCommands:
   function : Manage Go runtime Lambda functions
   api      : Manage APIGateway resources
   deploy   : Deploy function or api resource
+  log      : Tail function log
 
 Options:
   -h, --help: Show help

@@ -28,6 +28,7 @@ const (
 	FUNCTION_DEPLOY = "deploy"
 	FUNCTION_LIST   = "list"
 	FUNCTION_HELP   = "help"
+	FUNCTION_LOG    = "log"
 )
 
 // Function is the struct of AWS Lambda function operation command.
@@ -59,6 +60,7 @@ Operation:
   config : Modify function setting
   deploy : Deploy functions
   list   : List functions
+  log    : Tail function log
   help   : Show this help
 
 Options:
@@ -99,6 +101,8 @@ func (f *Function) Run(ctx *args.Context) {
 		err = NewDeploy().deployFunction(c, ctx)
 	case FUNCTION_LIST:
 		err = f.listFunction(c, ctx)
+	case FUNCTION_LOG:
+		NewLog().tailLogs(c, ctx)
 	default:
 		fmt.Println(COMMAND_HEADER + f.Help())
 	}

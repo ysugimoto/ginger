@@ -2,6 +2,7 @@ package request
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -34,5 +35,12 @@ func debugRequest(obj fmt.Stringer) {
 	if debug != "enable" {
 		return
 	}
-	fmt.Println("[DEBUG] ", obj)
+	var name string
+	if t := reflect.TypeOf(obj); t.Kind() == reflect.Ptr {
+		name = "*" + t.Elem().Name()
+	} else {
+		name = t.Name()
+	}
+	fmt.Printf("[DEBUG] %s\n", name)
+	fmt.Println(obj)
 }

@@ -24,7 +24,8 @@ func main() {
 		Alias("event", "e", "").
 		Alias("memory", "m", 128).
 		Alias("timeout", "t", 3).
-		Alias("force", "f", nil).
+		Alias("force", "", nil).
+		Alias("filter", "", "").
 		Parse(os.Args[1:])
 
 	var cmd command.Command
@@ -41,6 +42,8 @@ func main() {
 		cmd = command.NewAPI()
 	case command.DEPLOY:
 		cmd = command.NewDeploy()
+	case command.LOG:
+		cmd = command.NewLog()
 	default:
 		cmd = command.NewHelp()
 	}
