@@ -1,7 +1,9 @@
-# ginger - A serverless framework for Go runtime
+# ginger - A Serverless framework for Go runtime
 
-`ginger` is the framework that manages `AWS API Gateway` rsources and `AWS Lambda` functions written in `go1.x` runtime.
-This tool can do following things:
+`ginger` is the framework that manages `AWS API Gateway` resources and `AWS Lambda` functions written in `go1.x` runtime.
+It can creates `Serverless` architecture on `AWS` platform.
+
+## Features
 
 - Create / Delete `API Gateway` resources
 - Create / Update / Delete `AWS Lambda` functions which works on `go1.x` runtime.
@@ -32,7 +34,7 @@ ginger init
 >>> some output...
 ```
 
-If you want to use (probably almost case yes) external Go package, We suggest that put project directory under the `$GOPATH/src` to enable verndor tree.
+If you want to use (probably almost case yes) external Go package, we suggest you put project directory under the `$GOPATH/src` to enable verndoring.
 
 For example:
 
@@ -54,52 +56,55 @@ The `ginger init` command will work as following:
 The `ginger` has three of project configurations. default values are deifned as following tables:
 
 | Configuration Name  | Default Value | Description                                                                          |
-|:-------------------:|:-------------:|:------------------------------------------------------------------------------------:|
+|:-------------------:|:-------------:|:-------------------------------------------------------------------------------------|
 | Profile             | (empty)       | Use profile name on AWS Request. If empty, ginger will use from environment variable |
 | Region              | us-east-1     | AWS region which project use                                                         |
 | LambdaExecutionRole | (empty)       | Set the AWS Lambda execution role                                                    |
 
-Above configurations can change through a config subcommand:
+Above configurations can change through a `config` subcommand:
 
 ```
 ginger config --profile [Profile] --region [Region] --role [LambdaExecutionRole]`
 ```
 
-Note that the `LambdaExecutionRole` is necessary for execution lambda function. Please make sure this value is set and role is valid.
-And, Once you deployed some functions or apis, you __should not__ change the region because when region is changed, function will be created on different regions as same name.
+Note that the `LambdaExecutionRole` is necessary to execute lambda function. Please make sure this value is set and role is valid.
+
+And once you deployed some functions or apis, you __should not__ change the region because when region is changed, function will be created on different regions as same name.
 
 ### Create function
 
-To create new function, run the `ginger create function --name [function name]` command. `ginger` creates function structure under the `functions/` directory, and write out to configuration of `Ginger.toml`.
+To create new function, run the `ginger create function --name [function name]` command.
+
+`ginger` creates function structure under the `functions/` directory, and write out to configuration of `Ginger.toml`.
 
 ```
 ginger function create --name example
 ```
 
-You can find a `functions/example` directory which contains `main.go`. The `main.go` is a lambda function handler. Feel free to edit this script. The `github.com/aws/aws-lambda-go/lambda` is installed as default.
+You can find a `functions/example` directory which contains `main.go`. The `main.go` is a lambda function handler. The `github.com/aws/aws-lambda-go/lambda` is installed as default.
 
-Of course you can install additional package with `go get` or other verndoring tools e.g. `glide`, `dep`, ...
+Of course you can install additional package with `go get` or other verndoring tools like `glide`, `dep`, ...
 
 Note that `ginger function create` creates function only on your local. To work on `AWS Lambda`, you need to `deploy function`.
 
 ### Deploy function
 
-After you modified function, run `ginger deploy function` command to deploy to the `AWS Lambda`.
+After you modified a function, run `ginger deploy function` command to deploy to the `AWS Lambda`.
 
 ```
 ginger deploy function
 ```
 
-`ginger` compiles function automatically, and archive to `zip`, and send to `AWS` to create on destination region.
+Command compiles function automatically, and archive to `zip`, and send to `AWS` to create on destination region.
 
-And, `ginger function deploy` is alias of this command.
+Or, `ginger function deploy` is alias of this command so you can also use it to deploy function.
 
 ### Modify function
 
 A Lambda function has a couple of settings:
 
 | Name       | Default Value | Description                                                              |
-|:----------:|:-------------:|:------------------------------------------------------------------------:|
+|:----------:|:-------------:|:-------------------------------------------------------------------------|
 | MemorySize | 128 (MB)      | Function memory size. this value must be above `128`, and multiple of 64 |
 | Timeout    | 3 (Sec)       | Function timeout duration                                                |
 
