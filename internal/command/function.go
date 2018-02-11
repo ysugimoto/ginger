@@ -46,7 +46,7 @@ func NewFunction() *Function {
 
 // Show function command help.
 func (f *Function) Help() string {
-	return `
+	return COMMAND_HEADER + `
 funtion - (AWS Lambda) management command.
 
 Usage:

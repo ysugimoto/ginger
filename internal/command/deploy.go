@@ -39,7 +39,7 @@ func NewDeploy() *Deploy {
 
 // Show deloy command help
 func (d *Deploy) Help() string {
-	return `
+	return COMMAND_HEADER + `
 deploy - Deploy management functions and apis.
 
 Usage:

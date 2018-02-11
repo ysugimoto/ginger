@@ -44,7 +44,7 @@ func NewAPI() *APIGateway {
 
 // Display help string
 func (a *APIGateway) Help() string {
-	return `
+	return COMMAND_HEADER + `
 api - AWS APIGateway management command.
 
 Usage:
