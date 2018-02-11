@@ -30,7 +30,7 @@ const (
 	FUNCTION_HELP   = "help"
 )
 
-// AWS Lambda function operation command struct
+// Function is the struct of AWS Lambda function operation command.
 // This struct will be dispatched on "ginger fn/funtion" subcommand.
 // This command operates with above constant string.
 type Function struct {
