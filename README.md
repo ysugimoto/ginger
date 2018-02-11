@@ -191,7 +191,7 @@ After you deployed some ednpoints with Lambda integration, you can try to invoke
 ginger api invoke --path [endpoint path]
 ```
 
-`ginger` name `API Gateway` endpoint URL, and send HTTP request to it. You can see a response in your terminal.
+`ginger` makes `API Gateway` endpoint URL and send HTTP request to it. You can see a response in your terminal.
 
 
 ## License
