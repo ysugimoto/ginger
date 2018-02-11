@@ -3,7 +3,7 @@
 all: assets
 	go build -ldflags "-X github.com/ysugimoto/ginger/request.debug=enable -X github.com/ysugimoto/ginger/command.debug=enable" -o dist/ginger
 
-production: assets
+production:
 	go build -o dist/ginger
 
 assets:
