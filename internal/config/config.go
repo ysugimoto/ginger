@@ -13,8 +13,6 @@ import (
 	"github.com/ysugimoto/ginger/internal/entity"
 )
 
-var mu sync.Mutex
-
 // Load loads configuration and map to Config struct.
 // this function always returns although the config file didn't exist.
 // Then you can confirm as Exists() on config file exists or not.
@@ -87,6 +85,9 @@ type Config struct {
 func (c *Config) Exists() bool {
 	return c.exists
 }
+
+// Mutex for file I/O
+var mu sync.Mutex
 
 // Write() writes configuration to file.
 func (c *Config) Write() {
