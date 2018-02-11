@@ -25,7 +25,7 @@ definitions:
              chmod +x $GOPATH/bin/dep
         - run:
            command: |
-             cd /go/src/github.com/ysugimoto/gigner
+             cd /go/src/github.com/ysugimoto/ginger
              dep ensure
              cd vendor/github.com/mattn/go-bindata && go install .
              make production
