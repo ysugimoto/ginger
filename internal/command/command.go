@@ -24,6 +24,7 @@ const (
 	CREATE   = "create"
 	BUILD    = "build"
 	DEPLOY   = "deploy"
+	LOG      = "log"
 )
 
 // Command is the interface implemented by structs that can run the command
