@@ -28,6 +28,7 @@ definitions:
              cd /go/src/github.com/ysugimoto/ginger
              dep ensure
              cd vendor/github.com/mattn/go-bindata && go install .
+             cd /go/src/github.com/ysugimoto/ginger
              make production
         - persist_to_workspace:
            root: /go/src/github.com/ysugimoto/ginger
