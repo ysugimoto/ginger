@@ -20,6 +20,8 @@ It can creates `Serverless` architecture on `AWS` platform.
 
 Move to your `$PATH` directory e.g. `/usr/local/bin`.
 
+To see a general usage, run `ginger help` command.
+
 ## Getting Started
 
 
