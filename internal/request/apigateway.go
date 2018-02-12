@@ -192,7 +192,7 @@ func (a *APIGatewayRequest) PutIntegration(restId string, r *entity.Resource) (e
 			}
 		}
 		a.PutMethod(restId, ig.Id, ig.Method())
-		return a.putS3Integration(restId, ig.Id, ig.Method(), r.Path+ig.ProxyPathPart(), ig.Bucket)
+		return a.putS3Integration(restId, ig.Id, ig.Method(), ig.Bucket)
 	default:
 		a.log.Errorf("Unexpected integration type %s\n", ig.IntegrationType)
 		return nil
@@ -239,13 +239,37 @@ func (a *APIGatewayRequest) generateSourceArn(account, restId, httpMethod, path 
 	)
 }
 
-func (a *APIGatewayRequest) putS3Integration(restId, rsourceId, httpMethod, path, bucketName string) error {
-	// TODO need implement
+func (a *APIGatewayRequest) putS3Integration(restId, rsourceId, httpMethod, bucketName string) error {
+	a.log.Printf("Putting S3 integration for %s...\n", path)
+
+	input := &apigateway.PutIntegrationInput{
+		HttpMethod:            aws.String(httpMethod),
+		Type:                  aws.String("HTTP_PROXY"),
+		Uri:                   aws.String(fmt.Sprintf("https://s3.amazonaws.com/%s/{proxy}", bucketName)),
+		ResourceId:            aws.String(resouceId),
+		RestApiId:             aws.String(restId),
+		IntegrationHttpMethod: aws.String("GET"),
+		ContentHandling:       aws.String("CONVERT_TO_BINAY"),
+		RequestParameters: map[string]*string{
+			"integration.request.path.proxy": aws.Strting("method.request.path.proxy"),
+		},
+		CacheKeyParameters: []*string{
+			"method.request.path.proxy",
+		},
+	}
+	debugRequest(input)
+	result, err := a.svc.PutIntegration(input)
+	if err != nil {
+		a.errorLog(err)
+		return err
+	}
+	debugRequest(result)
+	a.log.Print("Put integration successfully.")
 	return nil
 }
 
 func (a *APIGatewayRequest) putLambdaIntegration(restId, resourceId, httpMethod, path string, fn *entity.Function) error {
-	a.log.Printf("Putting integration for lambda %s...\n", fn.Name)
+	a.log.Printf("Putting Lambda integration for %s...\n", path)
 
 	l := NewLambda(a.config)
 	fnConfig, err := l.GetFunction(fn.Name)
@@ -274,7 +298,7 @@ func (a *APIGatewayRequest) putLambdaIntegration(restId, resourceId, httpMethod,
 	}
 	sourceArn := a.generateSourceArn(account, restId, httpMethod, path)
 	if err := l.AddAPIGatewayPermission(fn.Name, sourceArn); err == nil {
-		a.log.Info("Put integration successfully")
+		a.log.Info("Put integration successfully.")
 	}
 	return nil
 }
