@@ -34,10 +34,12 @@
     "private/protocol/query/queryutil",
     "private/protocol/rest",
     "private/protocol/restjson",
+    "private/protocol/restxml",
     "private/protocol/xml/xmlutil",
     "service/apigateway",
     "service/cloudwatchlogs",
     "service/lambda",
+    "service/s3",
     "service/sts"
   ]
   revision = "82eadef012f77590875babb177c60878727821c0"
@@ -117,6 +119,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "766e5c333ba40da9702dd05c300b005b0062c5ff81d3a728be95e6b592bb4e95"
+  inputs-digest = "6f7265aee8b787ad52df0ea5741b2cea31e39ad9350a38430978971871ead1df"
   solver-name = "gps-cdcl"
   solver-version = 1

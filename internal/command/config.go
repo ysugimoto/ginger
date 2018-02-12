@@ -31,6 +31,7 @@ Options:
   --profile : Using profile name
   --region  : Set project region
   --role    : Set lambda execution role
+  --bucket  : Set S3 bucket name which you want to use
 `
 }
 
@@ -55,6 +56,10 @@ func (c *Config) Run(ctx *args.Context) {
 	if v = ctx.String("role"); v != "" {
 		conf.Project.LambdaExecutionRole = v
 		c.log.Printf("Set Lambda execution role as \"%s\"\n", v)
+	}
+	if v = ctx.String("bucket"); v != "" {
+		conf.Project.S3BucketName = v
+		c.log.Printf("Set S3 bucket name as \"%s\"\n", v)
 	}
 	c.log.Info("Configuration updated!")
 }

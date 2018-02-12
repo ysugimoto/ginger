@@ -26,6 +26,9 @@ func main() {
 		Alias("timeout", "t", 3).
 		Alias("force", "", nil).
 		Alias("filter", "", "").
+		Alias("bucket", "", "").
+		Alias("directory", "d", "").
+		Alias("delete", "", nil).
 		Parse(os.Args[1:])
 
 	var cmd command.Command
@@ -44,6 +47,8 @@ func main() {
 		cmd = command.NewDeploy()
 	case command.LOG:
 		cmd = command.NewLog()
+	case command.STORAGE, command.S:
+		cmd = command.NewStorage()
 	default:
 		cmd = command.NewHelp()
 	}

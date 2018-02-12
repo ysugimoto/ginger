@@ -28,6 +28,7 @@ const (
 	FUNCTION_DEPLOY = "deploy"
 	FUNCTION_LIST   = "list"
 	FUNCTION_HELP   = "help"
+	FUNCTION_LINK   = "link"
 	FUNCTION_LOG    = "log"
 )
 
@@ -59,6 +60,7 @@ Operation:
   invoke : Invoke function
   config : Modify function setting
   deploy : Deploy functions
+  link   : Make lambda function integration for gateway resource
   list   : List functions
   log    : Tail function log
   help   : Show this help
@@ -69,6 +71,7 @@ Options:
   -e, --event   : [invoke] Event source (JSON string) or "@file" for filename
   -m, --memory  : [config] Memory size configuration (must be a multiple of 64 MB)
   -t, --timeout : [config] Function timeout configuration
+  -p, --path    : [link] Endpoint path
 `
 }
 
@@ -103,8 +106,10 @@ func (f *Function) Run(ctx *args.Context) {
 		err = f.listFunction(c, ctx)
 	case FUNCTION_LOG:
 		NewLog().tailLogs(c, ctx)
+	case FUNCTION_LINK:
+		err = f.linkFunction(c, ctx)
 	default:
-		fmt.Println(COMMAND_HEADER + f.Help())
+		fmt.Println(f.Help())
 	}
 }
 
@@ -294,5 +299,42 @@ func (f *Function) listFunction(c *config.Config, ctx *args.Context) error {
 			fmt.Println(strings.Repeat("-", w))
 		}
 	}
+	return nil
+}
+
+// linkFunction makes integration between API Gateway resource and Lambda function
+func (f *Function) linkFunction(c *config.Config, ctx *args.Context) error {
+	name := ctx.String("name")
+	if name == "" {
+		return exception("Function name didn't supplied. Run with --name option.")
+	} else if !c.Functions.Exists(name) {
+		return exception("Function %s doesn't defined in your project.")
+	}
+
+	path := ctx.String("path")
+	if path == "" {
+		return exception("Endpoint path is required. Run with -p, --path option.")
+	} else if !c.API.Exists(path) {
+		return exception("Endpoint %s does not defined in your project.\n", path)
+	}
+
+	rs := c.API.Find(path)
+	if rs.Id != "" && rs.Integration != nil {
+		// If interagraion already exists. need to delete it.
+		inquiry := fmt.Sprintf("%s has already have integration to %s. Override it?", rs.Path, rs.Integration.LambdaFunction)
+		if !input.Bool(inquiry) {
+			return exception("Canceled.")
+		}
+		api := request.NewAPIGateway(c)
+		api.DeleteMethod(c.API.RestId, rs.Id, rs.Integration.Method())
+		api.DeleteIntegration(c.API.RestId, rs.Id, rs.Integration.Method())
+		rs.Integration = nil
+	}
+
+	rs.Integration = &entity.Integration{
+		IntegrationType: "lambda",
+		LambdaFunction:  name,
+	}
+	f.log.Infof("Linked function %s to resource %s.\n", name, path)
 	return nil
 }

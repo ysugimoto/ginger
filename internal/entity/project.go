@@ -6,4 +6,5 @@ type Project struct {
 	Region              string `toml:"region"`
 	Profile             string `toml:"profile"`
 	LambdaExecutionRole string `toml:"lambda_execution_role"`
+	S3BucketName        string `toml:"s3_bucket_name"`
 }

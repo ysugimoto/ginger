@@ -45,6 +45,10 @@ func (i *Init) Run(ctx *args.Context) {
 		i.log.Printf("Create functions directory: %s\n", c.FunctionPath)
 		os.Mkdir(c.FunctionPath, 0755)
 	}
+	if _, err := os.Stat(c.StoragePath); err != nil {
+		i.log.Printf("Create storage directory: %s\n", c.StoragePath)
+		os.Mkdir(c.StoragePath, 0755)
+	}
 	if _, err := os.Stat(c.VendorPath); err != nil {
 		i.log.Printf("Create vendor directory: %s\n", c.VendorPath)
 		os.Mkdir(c.VendorPath, 0755)
@@ -54,6 +58,7 @@ func (i *Init) Run(ctx *args.Context) {
 		Profile:             "",
 		Region:              "us-east-1",
 		LambdaExecutionRole: "",
+		S3BucketName:        filepath.Base(c.Root),
 	}
 
 	if p := ctx.String("profile"); p != "" {
@@ -71,12 +76,16 @@ func (i *Init) Run(ctx *args.Context) {
 	if r := ctx.String("role"); r != "" {
 		project.LambdaExecutionRole = r
 	}
+	if b := ctx.String("bucket"); b != "" {
+		project.S3BucketName = b
+	}
 
 	if project.LambdaExecutionRole == "" {
 		i.log.Warn("Lambda Execution Role isn't set. Please run 'ginger config --role [role name]' before you deploy function.")
 	} else {
 		i.log.Printf("Lambda role set as %s\n", project.LambdaExecutionRole)
 	}
+	i.log.Warn("S3 bucket name %s might not be enable to use. Then you should run `ginger config --bucket [bucket name]` to change it.")
 	c.Project = project
 	c.Write()
 	NewInstall().Run(ctx)

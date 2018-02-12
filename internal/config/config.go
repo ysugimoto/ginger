@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
-	"github.com/pkg/errors"
 
 	"github.com/ysugimoto/ginger/internal/entity"
 )
@@ -17,16 +16,13 @@ import (
 // this function always returns although the config file didn't exist.
 // Then you can confirm as Exists() on config file exists or not.
 func Load() *Config {
-	root, err := findUp()
-	if err != nil {
-		fmt.Println("Unexpected Error", err)
-		os.Exit(1)
-	}
+	root := findUp()
 
 	c := &Config{
 		Root:         root,
 		Path:         filepath.Join(root, "Ginger.toml"),
 		FunctionPath: filepath.Join(root, "functions"),
+		StoragePath:  filepath.Join(root, "storage"),
 		VendorPath:   filepath.Join(root, "vendor"),
 		Project:      entity.Project{},
 		Functions:    entity.Functions{},
@@ -48,22 +44,20 @@ func Load() *Config {
 }
 
 // findUp finds ginger project root from current working directory.
-func findUp() (string, error) {
-	path, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
+func findUp() string {
+	path, _ := os.Getwd()
 
 	for {
 		if path == "/" {
 			break
 		}
 		if _, err := os.Stat(filepath.Join(path, "Ginger.toml")); err == nil {
-			return path, nil
+			return path
 		}
 		path = filepath.Dir(path)
 	}
-	return "", errors.New("Failed to find up configuration file")
+	path, _ = os.Getwd()
+	return path
 }
 
 // Config is the struct which maps configuration file into this.
@@ -73,6 +67,7 @@ type Config struct {
 	Path         string `toml:"-"`
 	FunctionPath string `toml:"-"`
 	VendorPath   string `toml:"-"`
+	StoragePath  string `toml:"-"`
 
 	exists bool `toml:"-"`
 

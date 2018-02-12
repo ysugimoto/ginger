@@ -7,6 +7,7 @@ import (
 
 	"archive/zip"
 	"io/ioutil"
+	"path/filepath"
 
 	"github.com/ysugimoto/go-args"
 
@@ -20,6 +21,7 @@ const (
 	DEPLOY_FUNCTION = "function"
 	DEPLOY_FN       = "fn"
 	DEPLOY_API      = "api"
+	DEPLOY_STORAGE  = "storage"
 	DEPLOY_ALL      = "all"
 	DEPLOY_HELP     = "help"
 )
@@ -78,14 +80,22 @@ func (d *Deploy) Run(ctx *args.Context) {
 		err = d.deployFunction(c, ctx)
 	case DEPLOY_API:
 		err = d.deployAPI(c, ctx)
+	case DEPLOY_STORAGE:
+		err = d.deployStorage(c, ctx)
 	case DEPLOY_ALL:
 		d.log.AddNamespace("all")
+		d.log.Print("========== Storage Deployment ==========")
+		if err = d.deployStorage(c, ctx); err != nil {
+			return
+		}
 		d.log.Print("========== Function Deployment ==========")
 		if err = d.deployFunction(c, ctx); err != nil {
 			return
 		}
 		d.log.Print("========== API Deployment ==========")
-		err = d.deployAPI(c, ctx)
+		if err = d.deployAPI(c, ctx); err != nil {
+			return
+		}
 	default:
 		fmt.Println(d.Help())
 	}
@@ -201,4 +211,48 @@ func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
 		api.Deploy(restId, s)
 	}
 	return
+}
+
+func (d *Deploy) deployStorage(c *config.Config, ctx *args.Context) error {
+	d.log.Warn("Deploying storage local -> S3...")
+	bucket := c.Project.S3BucketName
+	s3 := request.NewS3(c)
+
+	// Ensure bucket exists on AWS
+	if err := s3.EnsureBucketExists(bucket); err != nil {
+		return exception("The bucket %s creation error: %s", bucket, err.Error())
+	}
+
+	// Upload local objects to remote
+	locals, err := d.listLocalObjects(c.StoragePath)
+	if err != nil {
+		return exception("Failed to list local storage files: %s", err.Error())
+	}
+	for _, so := range locals {
+		d.log.Printf("Uploading local %s -> s3://%s/%s...\n", so.Key, bucket, so.Key)
+		s3.PutObject(bucket, so)
+	}
+	return nil
+}
+
+func (d *Deploy) listLocalObjects(root string) ([]*entity.StorageObject, error) {
+	objects := make([]*entity.StorageObject, 0)
+	err := filepath.Walk(root, func(path string, info os.FileInfo, e error) error {
+		if e != nil {
+			return e
+		} else if info.IsDir() {
+			return nil
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		so := entity.NewStorageObject(rel, info)
+		if err = so.Load(path); err != nil {
+			return err
+		}
+		objects = append(objects, so)
+		return nil
+	})
+	return objects, err
 }

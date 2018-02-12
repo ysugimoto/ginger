@@ -22,7 +22,6 @@ const (
 	API_CREATE = "create"
 	API_DELETE = "delete"
 	API_INVOKE = "invoke"
-	API_LINK   = "link"
 	API_DEPLOY = "deploy"
 	API_LIST   = "list"
 	API_HELP   = "help"
@@ -51,20 +50,18 @@ Usage:
   $ ginger api [operation] [options]
 
 Operation:
-  create : Create new endpoint
-  delete : Delete endpoint
-  invoke : Invoke endpoint
-  link   : Make lambda function integration for gateway request
-  deploy : Deploy endpoint
-  list   : List endpoint
-  help   : Show this help
+  create  : Create new endpoint
+  delete  : Delete endpoint
+  invoke  : Invoke endpoint
+  deploy  : Deploy endpoint
+  list    : List endpoint
+  help    : Show this help
 
 Options:
   -p, --path   : [all] Path name
-  -n, --name   : [link] Function name
   -s, --stage  : [invoke] Target stage
   -m, --method : [invoke] Method name (default=GET)
-  -d, --data   : [invoke] Request payload (POST/PUT method only)
+  -b, --body   : [invoke] Request payload (POST/PUT method only)
 `
 }
 
@@ -93,8 +90,6 @@ func (a *APIGateway) Run(ctx *args.Context) {
 		err = a.deleteEndpoint(c, ctx)
 	case API_INVOKE:
 		err = a.invokeEndpoint(c, ctx)
-	case API_LINK:
-		err = a.linkFunction(c, ctx)
 	case API_DEPLOY:
 		err = NewDeploy().deployAPI(c, ctx)
 	case API_LIST:
@@ -193,7 +188,7 @@ func (a *APIGateway) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 	req, err := http.NewRequest(
 		strings.ToUpper(ctx.String("method")),
 		callUrl,
-		strings.NewReader(ctx.String("data")),
+		strings.NewReader(ctx.String("body")),
 	)
 	if err != nil {
 		return exception("Failed to create HTTP request: %s\n", err.Error())
@@ -217,42 +212,6 @@ func (a *APIGateway) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 		a.log.Info("========== Response received =========")
 		fmt.Println(string(dump))
 	}
-	return nil
-}
-
-// linkFunction makes itegration between API Gateway resource and Lambda function
-func (a *APIGateway) linkFunction(c *config.Config, ctx *args.Context) error {
-	name := ctx.String("name")
-	if name == "" {
-		return exception("Function name didn't supplied. Run with --name option.")
-	} else if !c.Functions.Exists(name) {
-		return exception("Function %s doesn't defined in your project.")
-	}
-
-	path := ctx.String("path")
-	if path == "" {
-		return exception("Endpoint path is required. Run with -p, --path option.")
-	} else if !c.API.Exists(path) {
-		return exception("Endpoint %s does not defined in your project.\n", path)
-	}
-
-	rs := c.API.Find(path)
-	if rs.Id != "" && rs.Integration != nil {
-		// If interagraion already exists. need to delete it.
-		inquiry := fmt.Sprintf("%s has already have integration to %s. Override it?", rs.Path, rs.Integration.LambdaFunction)
-		if !input.Bool(inquiry) {
-			return exception("Canceled.")
-		}
-		api := request.NewAPIGateway(c)
-		api.DeleteMethod(c.API.RestId, rs.Id)
-		api.DeleteIntegration(c.API.RestId, rs.Id)
-		rs.Integration = nil
-	}
-
-	rs.Integration = &entity.Integration{
-		LambdaFunction: name,
-	}
-	a.log.Infof("Linked to function %s.\n", name)
 	return nil
 }
 

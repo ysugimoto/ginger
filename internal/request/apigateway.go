@@ -165,21 +165,38 @@ func (a *APIGatewayRequest) CreateResourceRecursive(restId, path string) (err er
 }
 
 func (a *APIGatewayRequest) PutIntegration(restId string, r *entity.Resource) (err error) {
-	fn := a.config.Functions.Find(r.Integration.LambdaFunction)
-	if fn == nil {
-		err = fmt.Errorf("Function %s couldn't find in your project.\n", r.Integration.LambdaFunction)
-		a.errorLog(err)
-		return err
-	}
-	// Need to add extra "/{proxy+}" resource for lambda integration
-	if r.Integration.Id == "" {
-		r.Integration.Id, err = a.CreateResource(restId, r.Id, "{proxy+}")
-		if err != nil {
+	ig := r.Integration
+	switch ig.IntegrationType {
+	case "lambda":
+		fn := a.config.Functions.Find(ig.LambdaFunction)
+		if fn == nil {
+			err = fmt.Errorf("Function %s couldn't find in your project.\n", ig.LambdaFunction)
+			a.errorLog(err)
 			return err
 		}
+		// Need to add extra proxy path part resource for lambda integration
+		if ig.Id == "" {
+			ig.Id, err = a.CreateResource(restId, r.Id, ig.ProxyPathPart())
+			if err != nil {
+				return err
+			}
+		}
+		a.PutMethod(restId, ig.Id, ig.Method())
+		return a.putLambdaIntegration(restId, ig.Id, ig.Method(), r.Path+ig.ProxyPathPart(), fn)
+	case "s3":
+		// Need to add extra proxy path part resource for lambda integration
+		if ig.Id == "" {
+			ig.Id, err = a.CreateResource(restId, r.Id, ig.ProxyPathPart())
+			if err != nil {
+				return err
+			}
+		}
+		a.PutMethod(restId, ig.Id, ig.Method())
+		return a.putS3Integration(restId, ig.Id, ig.Method(), r.Path+ig.ProxyPathPart(), ig.Bucket)
+	default:
+		a.log.Errorf("Unexpected integration type %s\n", ig.IntegrationType)
+		return nil
 	}
-	a.PutMethod(restId, r.Integration.Id, "ANY")
-	return a.putLambdaIntegration(restId, r.Integration.Id, "ANY", r.Path+"/{proxy+}", fn)
 }
 
 func (a *APIGatewayRequest) PutMethod(restId, resourceId, httpMethod string) error {
@@ -220,6 +237,11 @@ func (a *APIGatewayRequest) generateSourceArn(account, restId, httpMethod, path 
 		httpMethod,
 		formatProxyPath(path),
 	)
+}
+
+func (a *APIGatewayRequest) putS3Integration(restId, rsourceId, httpMethod, path, bucketName string) error {
+	// TODO need implement
+	return nil
 }
 
 func (a *APIGatewayRequest) putLambdaIntegration(restId, resourceId, httpMethod, path string, fn *entity.Function) error {
@@ -308,10 +330,10 @@ func (a *APIGatewayRequest) DeleteResource(restId, resourceId string) error {
 	return nil
 }
 
-func (a *APIGatewayRequest) DeleteMethod(restId, resourceId string) error {
+func (a *APIGatewayRequest) DeleteMethod(restId, resourceId, method string) error {
 	a.log.Print("Deleting method...")
 	input := &apigateway.DeleteMethodInput{
-		HttpMethod: aws.String("ANY"),
+		HttpMethod: aws.String(strings.ToUpper(method)),
 		RestApiId:  aws.String(restId),
 		ResourceId: aws.String(resourceId),
 	}
@@ -326,10 +348,10 @@ func (a *APIGatewayRequest) DeleteMethod(restId, resourceId string) error {
 	return nil
 }
 
-func (a *APIGatewayRequest) DeleteIntegration(restId, resourceId string) error {
+func (a *APIGatewayRequest) DeleteIntegration(restId, resourceId, method string) error {
 	a.log.Print("Deleting integration...")
 	input := &apigateway.DeleteIntegrationInput{
-		HttpMethod: aws.String("ANY"),
+		HttpMethod: aws.String(strings.ToUpper(method)),
 		RestApiId:  aws.String(restId),
 		ResourceId: aws.String(resourceId),
 	}
