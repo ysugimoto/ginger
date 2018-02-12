@@ -202,8 +202,18 @@ func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
 		} else {
 			api.CreateResourceRecursive(restId, r.Path)
 		}
-		if r.Integration != nil {
-			api.PutIntegration(restId, r)
+		if igs := r.GetIntegrations(); igs != nil {
+			if r.IntegrationId == "" {
+				r.IntegrationId, err = api.CreateResource(restId, r.Id, "{proxy+}")
+				if err != nil {
+					return
+				}
+			}
+			for method, integration := range igs {
+				if err = api.PutIntegration(restId, r.IntegrationId, method, integration); err != nil {
+					return
+				}
+			}
 		}
 	}
 

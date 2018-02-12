@@ -164,37 +164,22 @@ func (a *APIGatewayRequest) CreateResourceRecursive(restId, path string) (err er
 	return nil
 }
 
-func (a *APIGatewayRequest) PutIntegration(restId string, r *entity.Resource) (err error) {
-	ig := r.Integration
-	switch ig.IntegrationType {
+func (a *APIGatewayRequest) PutIntegration(restId, resourceId, method string, i *entity.Integration) (err error) {
+	switch i.IntegrationType {
 	case "lambda":
-		fn := a.config.Functions.Find(ig.LambdaFunction)
+		fn := a.config.Functions.Find(i.LambdaFunction)
 		if fn == nil {
-			err = fmt.Errorf("Function %s couldn't find in your project.\n", ig.LambdaFunction)
+			err = fmt.Errorf("Function %s couldn't find in your project.\n", i.LambdaFunction)
 			a.errorLog(err)
 			return err
 		}
-		// Need to add extra proxy path part resource for lambda integration
-		if ig.Id == "" {
-			ig.Id, err = a.CreateResource(restId, r.Id, ig.ProxyPathPart())
-			if err != nil {
-				return err
-			}
-		}
-		a.PutMethod(restId, ig.Id, ig.Method())
-		return a.putLambdaIntegration(restId, ig.Id, ig.Method(), r.Path+ig.ProxyPathPart(), fn)
+		a.PutMethod(restId, resourceId, method)
+		return a.putLambdaIntegration(restId, resourceId, method, i.Path+"/{proxy+}", fn)
 	case "s3":
-		// Need to add extra proxy path part resource for lambda integration
-		if ig.Id == "" {
-			ig.Id, err = a.CreateResource(restId, r.Id, ig.ProxyPathPart())
-			if err != nil {
-				return err
-			}
-		}
-		a.PutMethod(restId, ig.Id, ig.Method())
-		return a.putS3Integration(restId, ig.Id, ig.Method(), ig.Bucket)
+		a.PutMethod(restId, resourceId, method)
+		return a.putS3Integration(restId, resourceId, method, i.Bucket)
 	default:
-		a.log.Errorf("Unexpected integration type %s\n", ig.IntegrationType)
+		a.log.Errorf("Unexpected integration type %s\n", i.IntegrationType)
 		return nil
 	}
 }
@@ -239,22 +224,22 @@ func (a *APIGatewayRequest) generateSourceArn(account, restId, httpMethod, path 
 	)
 }
 
-func (a *APIGatewayRequest) putS3Integration(restId, rsourceId, httpMethod, bucketName string) error {
-	a.log.Printf("Putting S3 integration for %s...\n", path)
+func (a *APIGatewayRequest) putS3Integration(restId, resourceId, httpMethod, bucketName string) error {
+	a.log.Print("Putting S3 integration...")
 
 	input := &apigateway.PutIntegrationInput{
 		HttpMethod:            aws.String(httpMethod),
 		Type:                  aws.String("HTTP_PROXY"),
 		Uri:                   aws.String(fmt.Sprintf("https://s3.amazonaws.com/%s/{proxy}", bucketName)),
-		ResourceId:            aws.String(resouceId),
+		ResourceId:            aws.String(resourceId),
 		RestApiId:             aws.String(restId),
 		IntegrationHttpMethod: aws.String("GET"),
 		ContentHandling:       aws.String("CONVERT_TO_BINAY"),
 		RequestParameters: map[string]*string{
-			"integration.request.path.proxy": aws.Strting("method.request.path.proxy"),
+			"integration.request.path.proxy": aws.String("method.request.path.proxy"),
 		},
 		CacheKeyParameters: []*string{
-			"method.request.path.proxy",
+			aws.String("method.request.path.proxy"),
 		},
 	}
 	debugRequest(input)
