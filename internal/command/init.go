@@ -85,7 +85,7 @@ func (i *Init) Run(ctx *args.Context) {
 	} else {
 		i.log.Printf("Lambda role set as %s\n", project.LambdaExecutionRole)
 	}
-	i.log.Warn("S3 bucket name %s might not be enable to use. Then you should run `ginger config --bucket [bucket name]` to change it.")
+	i.log.Warnf("S3 bucket name \"%s\" might not be enable to use. Then you should run `ginger config --bucket [bucket name]` to change it.", project.S3BucketName)
 	c.Project = project
 	c.Write()
 	NewInstall().Run(ctx)

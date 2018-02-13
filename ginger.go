@@ -17,6 +17,7 @@ func main() {
 		Alias("profile", "", "").
 		Alias("region", "", "").
 		Alias("role", "", "").
+		Alias("hook", "", "").
 		Alias("path", "p", "").
 		Alias("method", "m", "").
 		Alias("body", "b", "").
