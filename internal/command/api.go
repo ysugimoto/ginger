@@ -184,12 +184,13 @@ func (a *APIGateway) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 	host := fmt.Sprintf("%s.execute-api.%s.amazonaws.com", c.API.RestId, c.Project.Region)
 	callUrl := fmt.Sprintf("https://%s/%s%s/_invoke", host, ctx.String("stage"), path)
 
+	method := "GET"
+	if m := ctx.String("method"); m != "" {
+		method = strings.ToUpper(m)
+	}
+
 	a.log.Printf("Send HTTP request to %s\n", callUrl)
-	req, err := http.NewRequest(
-		strings.ToUpper(ctx.String("method")),
-		callUrl,
-		strings.NewReader(ctx.String("body")),
-	)
+	req, err := http.NewRequest(method, callUrl, strings.NewReader(ctx.String("body")))
 	if err != nil {
 		return exception("Failed to create HTTP request: %s\n", err.Error())
 	}
@@ -228,7 +229,7 @@ func (a *APIGateway) listEndpoint(c *config.Config, ctx *args.Context) error {
 	}
 	line := strings.Repeat("=", w)
 	fmt.Println(line)
-	fmt.Printf("%-36s %-16s %-36s %4s\n", "Path", "ResourceId", "LinedFunction", "Deployed")
+	fmt.Printf("%-36s %-16s %-36s %4s\n", "Path", "ResourceId", "Integrations", "Deployed")
 	fmt.Println(line)
 	for i, r := range c.API.Resources {
 		if !r.UserDefined {
@@ -239,8 +240,10 @@ func (a *APIGateway) listEndpoint(c *config.Config, ctx *args.Context) error {
 			d = "yes"
 		}
 		f := "-"
-		if r.Integration != nil {
-			f = r.Integration.LambdaFunction
+		if igs := r.GetIntegrations(); igs != nil {
+			for m, i := range igs {
+				f += fmt.Sprintf("%s:%s", m, i.String())
+			}
 		}
 		fmt.Printf("%-36s %-16s %-36s %-4s\n", r.Path, r.Id, f, d)
 		if i != len(c.Functions)-1 {

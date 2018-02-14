@@ -61,5 +61,9 @@ func (c *Config) Run(ctx *args.Context) {
 		conf.Project.S3BucketName = v
 		c.log.Printf("Set S3 bucket name as \"%s\"\n", v)
 	}
+	if v = ctx.String("hook"); v != "" {
+		conf.Project.DeployHook = v
+		c.log.Print("Set deploy hook command.")
+	}
 	c.log.Info("Configuration updated!")
 }

@@ -17,8 +17,9 @@ func main() {
 		Alias("profile", "", "").
 		Alias("region", "", "").
 		Alias("role", "", "").
+		Alias("hook", "", "").
 		Alias("path", "p", "").
-		Alias("method", "m", "GET").
+		Alias("method", "m", "").
 		Alias("body", "b", "").
 		Alias("stage", "s", "").
 		Alias("event", "e", "").
@@ -49,6 +50,8 @@ func main() {
 		cmd = command.NewLog()
 	case command.STORAGE, command.S:
 		cmd = command.NewStorage()
+	case command.INTEGRATE, command.I:
+		cmd = command.NewIntegrate()
 	default:
 		cmd = command.NewHelp()
 	}

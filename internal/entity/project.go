@@ -7,4 +7,5 @@ type Project struct {
 	Profile             string `toml:"profile"`
 	LambdaExecutionRole string `toml:"lambda_execution_role"`
 	S3BucketName        string `toml:"s3_bucket_name"`
+	DeployHook          string `toml:"deploy_hook"`
 }

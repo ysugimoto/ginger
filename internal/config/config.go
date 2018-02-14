@@ -63,13 +63,12 @@ func findUp() string {
 // Config is the struct which maps configuration file into this.
 // Ensure call Write() to update configuration.
 type Config struct {
+	exists       bool   `toml:"-"`
 	Root         string `toml:"-"`
 	Path         string `toml:"-"`
 	FunctionPath string `toml:"-"`
 	VendorPath   string `toml:"-"`
 	StoragePath  string `toml:"-"`
-
-	exists bool `toml:"-"`
 
 	Project   entity.Project   `toml:"project"`
 	Functions entity.Functions `toml:"function"`

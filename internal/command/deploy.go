@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 
 	"archive/zip"
 	"io/ioutil"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/ysugimoto/go-args"
@@ -77,12 +79,24 @@ func (d *Deploy) Run(ctx *args.Context) {
 
 	switch ctx.At(1) {
 	case DEPLOY_FUNCTION, DEPLOY_FN:
+		if err = d.runHook(c); err != nil {
+			return
+		}
 		err = d.deployFunction(c, ctx)
 	case DEPLOY_API:
+		if err = d.runHook(c); err != nil {
+			return
+		}
 		err = d.deployAPI(c, ctx)
 	case DEPLOY_STORAGE:
+		if err = d.runHook(c); err != nil {
+			return
+		}
 		err = d.deployStorage(c, ctx)
 	case DEPLOY_ALL:
+		if err = d.runHook(c); err != nil {
+			return
+		}
 		d.log.AddNamespace("all")
 		d.log.Print("========== Storage Deployment ==========")
 		if err = d.deployStorage(c, ctx); err != nil {
@@ -99,6 +113,27 @@ func (d *Deploy) Run(ctx *args.Context) {
 	default:
 		fmt.Println(d.Help())
 	}
+}
+
+func (d *Deploy) runHook(c *config.Config) error {
+	// If deploy hook doesn't spcify, skip it
+	if c.Project.DeployHook == "" {
+		return nil
+	}
+	hook := c.Project.DeployHook
+	d.log.Infof("Deploy hook command execute: %s\n", hook)
+	parts := strings.Split(hook, " ")
+	var cmd *exec.Cmd
+	if len(parts) > 1 {
+		cmd = exec.Command(parts[0], parts[1:]...)
+	} else {
+		cmd = exec.Command(parts[0])
+	}
+	cmd.Dir = c.Root
+	cmd.Env = os.Environ()
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 // deployFunction deploys functions to AWS Lambda.
@@ -202,8 +237,18 @@ func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
 		} else {
 			api.CreateResourceRecursive(restId, r.Path)
 		}
-		if r.Integration != nil {
-			api.PutIntegration(restId, r)
+		if igs := r.GetIntegrations(); igs != nil {
+			if r.IntegrationId == "" {
+				r.IntegrationId, err = api.CreateResource(restId, r.Id, "{proxy+}")
+				if err != nil {
+					return
+				}
+			}
+			for method, integration := range igs {
+				if err = api.PutIntegration(restId, r.IntegrationId, method, integration); err != nil {
+					return
+				}
+			}
 		}
 	}
 
@@ -214,20 +259,24 @@ func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
 }
 
 func (d *Deploy) deployStorage(c *config.Config, ctx *args.Context) error {
-	d.log.Warn("Deploying storage local -> S3...")
 	bucket := c.Project.S3BucketName
 	s3 := request.NewS3(c)
+
+	// Upload local objects to remote
+	locals, err := d.listLocalObjects(c.StoragePath)
+	if err != nil {
+		return exception("Failed to list local storage files: %s", err.Error())
+	} else if len(locals) == 0 {
+		return exception("Any local files didn't find, abort.")
+	}
+
+	d.log.Warn("Deploying storage local -> S3...")
 
 	// Ensure bucket exists on AWS
 	if err := s3.EnsureBucketExists(bucket); err != nil {
 		return exception("The bucket %s creation error: %s", bucket, err.Error())
 	}
 
-	// Upload local objects to remote
-	locals, err := d.listLocalObjects(c.StoragePath)
-	if err != nil {
-		return exception("Failed to list local storage files: %s", err.Error())
-	}
 	for _, so := range locals {
 		d.log.Printf("Uploading local %s -> s3://%s/%s...\n", so.Key, bucket, so.Key)
 		s3.PutObject(bucket, so)
