@@ -24,6 +24,7 @@ func Load() *Config {
 		FunctionPath: filepath.Join(root, "functions"),
 		StoragePath:  filepath.Join(root, "storage"),
 		VendorPath:   filepath.Join(root, "vendor"),
+		StagePath:    filepath.Join(root, "stages"),
 		Project:      entity.Project{},
 		Functions:    entity.Functions{},
 		API: entity.API{
@@ -69,10 +70,12 @@ type Config struct {
 	FunctionPath string `toml:"-"`
 	VendorPath   string `toml:"-"`
 	StoragePath  string `toml:"-"`
+	StagePath    string `toml:"-"`
 
 	Project   entity.Project   `toml:"project"`
 	Functions entity.Functions `toml:"function"`
 	API       entity.API       `toml:"api"`
+	Stages    entity.Stages    `toml:"stages"`
 }
 
 // Exists() returns bool which config file exists or not.

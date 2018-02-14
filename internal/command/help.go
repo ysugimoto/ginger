@@ -37,6 +37,7 @@ SubCommands:
   install  : Install ginger dependencies
   function : Manage Go runtime Lambda functions
   api      : Manage APIGateway resources
+  stage    : Manage APIGateway stages
   deploy   : Deploy function or api resource
   log      : Tail function log
 

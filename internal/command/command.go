@@ -28,6 +28,7 @@ const (
 	LOG       = "log"
 	INTEGRATE = "integrate"
 	I         = "i" // alias for "integrate"
+	STAGE     = "stage"
 )
 
 // Command is the interface implemented by structs that can run the command

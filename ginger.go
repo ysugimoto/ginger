@@ -52,6 +52,8 @@ func main() {
 		cmd = command.NewStorage()
 	case command.INTEGRATE, command.I:
 		cmd = command.NewIntegrate()
+	case command.STAGE:
+		cmd = command.NewStage()
 	default:
 		cmd = command.NewHelp()
 	}

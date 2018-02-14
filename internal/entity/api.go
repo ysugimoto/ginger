@@ -38,7 +38,7 @@ func (a API) Find(path string) *Resource {
 	return nil
 }
 
-// Remove() remvoes resource from slice.
+// Remove() remove resource from slice.
 func (a API) Remove(path string) {
 	path = formatPath(path)
 	for i, r := range a.Resources {

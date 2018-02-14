@@ -53,6 +53,10 @@ func (i *Init) Run(ctx *args.Context) {
 		i.log.Printf("Create vendor directory: %s\n", c.VendorPath)
 		os.Mkdir(c.VendorPath, 0755)
 	}
+	if _, err := os.Stat(c.StagePath); err != nil {
+		i.log.Printf("Create stages directory: %s\n", c.StagePath)
+		os.Mkdir(c.StagePath, 0755)
+	}
 	project := entity.Project{
 		Name:                filepath.Base(c.Root),
 		Profile:             "",
