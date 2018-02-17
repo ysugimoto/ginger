@@ -91,7 +91,7 @@ func (s *Stage) Run(ctx *args.Context) {
 
 // createStage creates new stage.
 // If REST API has already been created, also create stage to that API.
-func (s *Stage) createStage(c *config.Config, ctx *args.Context) error {
+func (s *Stage) createStage(c *config.Config, ctx *args.Context) (err error) {
 	name := ctx.String("name")
 	if name == "" {
 		return exception("Stage name didn't supplied. Run with --name option.")
@@ -103,17 +103,21 @@ func (s *Stage) createStage(c *config.Config, ctx *args.Context) error {
 		Name: name,
 	}
 	fileName := filepath.Join(c.StagePath, fmt.Sprintf("%s.json", name))
-	if err := ioutil.WriteFile(fileName, []byte("{\n\n}"), 0644); err != nil {
+	if err = ioutil.WriteFile(fileName, []byte("{\n\n}"), 0644); err != nil {
 		return exception("Create stage json error: %s", err.Error())
 	}
 
-	if c.API.RestId != "" {
-		s.log.Print("The REST API has already created. so stage will be created at API")
-		api := request.NewAPIGateway(c)
-		if err := api.CreateStage(c.API.RestId, name); err != nil {
+	api := request.NewAPIGateway(c)
+	if c.API.RestId == "" {
+		s.log.Print("The REST API hasn't been created yet. Create new REST API.")
+		if c.API.RestId, err = api.CreateRestAPI(c.Project.Name); err != nil {
 			return nil
 		}
 	}
+	if err := api.CreateStage(c.API.RestId, name); err != nil {
+		return nil
+	}
+
 	c.Stages = append(c.Stages, stg)
 	s.log.Infof("Stage created. To manage stage variables, edit stages/%s.json.\n", name)
 	return nil
