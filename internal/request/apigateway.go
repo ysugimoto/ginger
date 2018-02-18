@@ -374,3 +374,67 @@ func (a *APIGatewayRequest) DeleteIntegration(restId, resourceId, method string)
 	a.log.Info("Integration deleted successfully.")
 	return nil
 }
+
+func (a *APIGatewayRequest) CreateStage(restId, stageName string) error {
+	a.log.Printf("Creating new stage \"%s\"...\n", stageName)
+	input := &apigateway.CreateStageInput{
+		StageName:   aws.String(stageName),
+		Description: aws.String("Created via ginger project"),
+		RestApiId:   aws.String(restId),
+	}
+	debugRequest(input)
+	result, err := a.svc.CreateStage(input)
+	if err != nil {
+		a.errorLog(err)
+		return err
+	}
+	debugRequest(result)
+	a.log.Info("Stage created successfully.")
+	return nil
+}
+
+func (a *APIGatewayRequest) DeleteStage(restId, stageName string) error {
+	a.log.Printf("Deleting stage \"%s\"...\n", stageName)
+	input := &apigateway.DeleteStageInput{
+		StageName: aws.String(stageName),
+		RestApiId: aws.String(restId),
+	}
+	debugRequest(input)
+	result, err := a.svc.DeleteStage(input)
+	if err != nil {
+		a.errorLog(err)
+		return err
+	}
+	debugRequest(result)
+	a.log.Info("Stage deleted successfully.")
+	return nil
+}
+
+func (a *APIGatewayRequest) StageExists(restId, stageName string) bool {
+	input := &apigateway.GetStageInput{
+		StageName: aws.String(stageName),
+		RestApiId: aws.String(restId),
+	}
+	debugRequest(input)
+	result, err := a.svc.GetStage(input)
+	if err != nil {
+		a.errorLog(err, apigateway.ErrCodeNotFoundException)
+		return false
+	}
+	debugRequest(result)
+	return true
+}
+
+func (a *APIGatewayRequest) GetStages(restId string) []*apigateway.Stage {
+	input := &apigateway.GetStagesInput{
+		RestApiId: aws.String(restId),
+	}
+	debugRequest(input)
+	result, err := a.svc.GetStages(input)
+	if err != nil {
+		a.errorLog(err, apigateway.ErrCodeNotFoundException)
+		return make([]*apigateway.Stage, 0)
+	}
+	debugRequest(result)
+	return result.Item
+}
