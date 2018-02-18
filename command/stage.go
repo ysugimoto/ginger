@@ -11,11 +11,11 @@ import (
 	"github.com/mattn/go-tty"
 	"github.com/ysugimoto/go-args"
 
-	"github.com/ysugimoto/ginger/internal/config"
-	"github.com/ysugimoto/ginger/internal/entity"
-	"github.com/ysugimoto/ginger/internal/input"
-	"github.com/ysugimoto/ginger/internal/logger"
-	"github.com/ysugimoto/ginger/internal/request"
+	"github.com/ysugimoto/ginger/config"
+	"github.com/ysugimoto/ginger/entity"
+	"github.com/ysugimoto/ginger/input"
+	"github.com/ysugimoto/ginger/logger"
+	"github.com/ysugimoto/ginger/request"
 )
 
 const (

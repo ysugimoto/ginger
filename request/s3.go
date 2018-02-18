@@ -7,9 +7,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 
-	"github.com/ysugimoto/ginger/internal/config"
-	"github.com/ysugimoto/ginger/internal/entity"
-	"github.com/ysugimoto/ginger/internal/logger"
+	"github.com/ysugimoto/ginger/config"
+	"github.com/ysugimoto/ginger/entity"
+	"github.com/ysugimoto/ginger/logger"
 )
 
 // S3Request is the struct which manages AWS s3 service.

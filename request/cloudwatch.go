@@ -9,8 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 
-	"github.com/ysugimoto/ginger/internal/config"
-	"github.com/ysugimoto/ginger/internal/logger"
+	"github.com/ysugimoto/ginger/config"
+	"github.com/ysugimoto/ginger/logger"
 )
 
 // CloudWatchLogsRequest is the struct which wrap AWS cloud watch logs service.
