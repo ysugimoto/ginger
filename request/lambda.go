@@ -122,7 +122,7 @@ func (l *LambdaRequest) CreateFunction(fn *entity.Function, zipBytes []byte) (st
 		},
 		FunctionName: aws.String(fn.Name),
 		Handler:      aws.String(fn.Name),
-		Role:         aws.String(l.config.Project.LambdaExecutionRole),
+		Role:         aws.String(fn.Role),
 		MemorySize:   aws.Int64(fn.MemorySize),
 		Publish:      aws.Bool(true),
 		Runtime:      aws.String("go1.x"),

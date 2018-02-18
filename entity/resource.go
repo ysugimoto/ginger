@@ -1,10 +1,14 @@
 package entity
 
+import (
+	"github.com/ysugimoto/ginger/internal/util"
+)
+
 // Resource is the entity struct which maps 'api.resources' slice in configuration.
 type Resource struct {
 	Id            string                  `toml:"id"`
 	Path          string                  `toml:"path"`
-	IntegrationId string                  `toml:"integration_id"`
+	IntegrationId *string                 `toml:"integration_id"`
 	Integrations  map[string]*Integration `toml:"integrations"`
 	UserDefined   bool                    `toml:"user_defined"`
 }
@@ -12,7 +16,7 @@ type Resource struct {
 func NewResource(id, path string) *Resource {
 	return &Resource{
 		Id:           id,
-		Path:         formatPath(path),
+		Path:         util.FormatPath(path),
 		Integrations: nil,
 		UserDefined:  false,
 	}

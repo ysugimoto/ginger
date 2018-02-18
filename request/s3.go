@@ -54,7 +54,6 @@ func (s *S3Request) errorLog(err error) {
 
 func (s *S3Request) EnsureBucketExists(bucket string) error {
 	input := &s3.CreateBucketInput{
-		ACL:    aws.String("public-read"),
 		Bucket: aws.String(bucket),
 	}
 	debugRequest(input)
@@ -73,7 +72,7 @@ func (s *S3Request) EnsureBucketExists(bucket string) error {
 		return err
 	}
 	debugRequest(result)
-	s.log.Infof("Bucket %s set up successfully.\n", bucket)
+	s.log.Infof("Bucket \"%s\" set up successfully.\n", bucket)
 	return nil
 }
 

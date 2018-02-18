@@ -1,11 +1,8 @@
 package command
 
 import (
-	"fmt"
 	"os"
 	"strings"
-
-	"path/filepath"
 
 	"github.com/ysugimoto/go-args"
 )
@@ -18,17 +15,17 @@ const (
 	INIT      = "init"
 	INSTALL   = "install"
 	CONFIG    = "config"
-	FUNCTION  = "function"
-	FN        = "fn" // alias for "function"
-	API       = "api"
-	STORAGE   = "storage"
-	S         = "s" // alias for "storage"
 	BUILD     = "build"
 	DEPLOY    = "deploy"
-	LOG       = "log"
+	STAGE     = "stage"
+	FUNCTION  = "function"
+	FN        = "fn" // alias for "function"
+	RESOURCE  = "resource"
+	R         = "e" // alias for "resource"
+	STORAGE   = "storage"
+	S         = "s" // alias for "storage"
 	INTEGRATE = "integrate"
 	I         = "i" // alias for "integrate"
-	STAGE     = "stage"
 )
 
 // Command is the interface implemented by structs that can run the command
@@ -41,21 +38,13 @@ type Command interface {
 var environments map[string]string
 
 // On initialize phase, collect the current environments to map inside
-// to override and supplie some values on execute command
+// to override and supplies some values on execute command
 func init() {
-	cwd, _ := os.Getwd()
-	vendorPath := filepath.Join(cwd, "vendor")
 	environments = make(map[string]string)
 
 	for _, e := range os.Environ() {
 		spl := strings.SplitN(e, "=", 2)
 		environments[spl[0]] = spl[1]
-	}
-
-	if v, ok := environments["GOPATH"]; ok {
-		environments["GOPATH"] = fmt.Sprintf("%s:%s", v, vendorPath)
-	} else {
-		environments["GOPATH"] = vendorPath
 	}
 }
 

@@ -42,6 +42,11 @@ func (i *Install) Run(ctx *args.Context) {
 
 	i.log.Print("Install function dependencies.")
 
+	if _, err := os.Stat(c.LibPath); err != nil {
+		i.log.Printf("Create library directory: %s\n", c.LibPath)
+		os.Mkdir(c.LibPath, 0755)
+	}
+
 	tmpDir, _ := ioutil.TempDir("", "ginger-tmp-packages")
 	defer os.RemoveAll(tmpDir)
 
@@ -54,7 +59,7 @@ func (i *Install) Run(ctx *args.Context) {
 	wg.Wait()
 
 	// Recursive copy
-	if err := i.movePackages(filepath.Join(tmpDir, "src"), c.VendorPath); err != nil {
+	if err := i.movePackages(tmpDir, c.LibPath); err != nil {
 		i.log.Error(err.Error)
 	}
 }

@@ -22,7 +22,8 @@ import (
 const (
 	DEPLOY_FUNCTION = "function"
 	DEPLOY_FN       = "fn"
-	DEPLOY_API      = "api"
+	DEPLOY_RESOURCE = "resource"
+	DEPLOY_R        = "r"
 	DEPLOY_STORAGE  = "storage"
 	DEPLOY_ALL      = "all"
 	DEPLOY_HELP     = "help"
@@ -74,6 +75,7 @@ func (d *Deploy) Run(ctx *args.Context) {
 			d.log.Error(err.Error())
 			debugTrace(err)
 		}
+		c.SortResources()
 		c.Write()
 	}()
 
@@ -83,11 +85,11 @@ func (d *Deploy) Run(ctx *args.Context) {
 			return
 		}
 		err = d.deployFunction(c, ctx)
-	case DEPLOY_API:
+	case DEPLOY_RESOURCE, DEPLOY_R:
 		if err = d.runHook(c); err != nil {
 			return
 		}
-		err = d.deployAPI(c, ctx)
+		err = d.deployResource(c, ctx)
 	case DEPLOY_STORAGE:
 		if err = d.runHook(c); err != nil {
 			return
@@ -97,7 +99,6 @@ func (d *Deploy) Run(ctx *args.Context) {
 		if err = d.runHook(c); err != nil {
 			return
 		}
-		d.log.AddNamespace("all")
 		d.log.Print("========== Storage Deployment ==========")
 		if err = d.deployStorage(c, ctx); err != nil {
 			return
@@ -106,21 +107,29 @@ func (d *Deploy) Run(ctx *args.Context) {
 		if err = d.deployFunction(c, ctx); err != nil {
 			return
 		}
-		d.log.Print("========== API Deployment ==========")
-		if err = d.deployAPI(c, ctx); err != nil {
+		d.log.Print("========== Resource Deployment ==========")
+		if err = d.deployResource(c, ctx); err != nil {
 			return
+		}
+
+		if s := ctx.String("stage"); s != "" {
+			d.log.Print("========== Stage Deployment ==========")
+			if err = d.deployStage(c, ctx); err != nil {
+				return
+			}
 		}
 	default:
 		fmt.Println(d.Help())
 	}
 }
 
+// runHook runs deployment hook command
 func (d *Deploy) runHook(c *config.Config) error {
 	// If deploy hook doesn't spcify, skip it
-	if c.Project.DeployHook == "" {
+	if c.DeployHookCommand == "" {
 		return nil
 	}
-	hook := c.Project.DeployHook
+	hook := c.DeployHookCommand
 	d.log.Infof("Deploy hook command execute: %s\n", hook)
 	parts := strings.Split(hook, " ")
 	var cmd *exec.Cmd
@@ -138,33 +147,55 @@ func (d *Deploy) runHook(c *config.Config) error {
 
 // deployFunction deploys functions to AWS Lambda.
 func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
-	if c.Project.LambdaExecutionRole == "" {
-		d.log.Warn("Lambda execution role isn't set. Run the 'ginger config --role [role-name]' to set it.")
-		return nil
-	}
 	d.log.AddNamespace("function")
-	targets := c.Functions
-	if ctx.Has("name") {
-		name := ctx.String("name")
-		if !c.Functions.Exists(name) {
-			return exception("Target function %s doesn't exist", name)
+	targets := []*entity.Function{}
+	if name := ctx.String("name"); name != "" {
+		fn, err := c.LoadFunction(name)
+		if err != nil {
+			return exception("Target function \"%s\" doesn't exist", name)
 		}
-		targets = entity.Functions{c.Functions.Find(name)}
+		targets = append(targets, fn)
+	} else {
+		var err error
+		targets, err = c.LoadAllFunctions()
+		if err != nil {
+			return exception("Failed to list functions: %s", err.Error())
+		}
 	}
 
 	buildDir, err := ioutil.TempDir("", "ginger-builds")
 	if err != nil {
 		return exception(err.Error())
 	}
+	defer os.RemoveAll(buildDir)
+
+	// Validate lambda exection roles
+	for _, f := range targets {
+		if f.Role != "" {
+			continue
+		}
+		if c.DefaultLambdaRole == "" {
+			return exception("Lambda execution role is empty for fucntion \"%s\". Please set default role or function specific role.\n", f.Name)
+		} else {
+			d.log.Warnf("Function \"%s\" execution role is empty. ginger uses default role via project configuration.\n", f.Name)
+		}
+	}
 
 	// Build functions
-	defer os.RemoveAll(buildDir)
-	builder := newBuilder(c.FunctionPath, buildDir)
+	builder := newBuilder(c.FunctionPath, buildDir, c.LibPath)
 	binaries := builder.build(targets)
 
 	// Deploy to AWS
 	lambda := request.NewLambda(c)
 	for fn, binary := range binaries {
+		if fn.Role == "" {
+			if c.DefaultLambdaRole == "" {
+
+			} else {
+				d.log.Warn("Lambda execution role is empty. ginger uses default lambda role on configuration...")
+				fn.Role = c.DefaultLambdaRole
+			}
+		}
 		d.log.Printf("Archiving zip for %s...\n", fn.Name)
 		buffer, err := d.archive(fn, binary)
 		if err != nil {
@@ -205,61 +236,60 @@ func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
 }
 
 // deployAPI deploys resources to AWS APIGateway.
-func (d *Deploy) deployAPI(c *config.Config, ctx *args.Context) (err error) {
+func (d *Deploy) deployResource(c *config.Config, ctx *args.Context) (err error) {
 	d.log.AddNamespace("api")
 	api := request.NewAPIGateway(c)
-	restId := c.API.RestId
 
-	if restId == "" {
-		restId, err = api.CreateRestAPI(fmt.Sprintf("ginger-%s", c.Project.Name))
+	if c.RestApiId == "" {
+		d.log.Print("REST API hasn't created yet. Creating...")
+		c.RestApiId, err = api.CreateRestAPI(fmt.Sprintf("ginger-%s", c.ProjectName))
 		if err != nil {
 			return
 		}
-		c.API.RestId = restId
 	}
 
+	// Probably root "/" resource created automatically, check existence in local
 	var rootId string
-	if r := c.API.Find("/"); r == nil {
-		rootId, err = api.GetResourceIdByPath(restId, "/")
+	if r, err := c.LoadResource("/"); err != nil {
+		rootId, err = api.GetResourceIdByPath(c.RestApiId, "/")
 		if err != nil {
-			return
+			return nil
 		}
-		resource := entity.NewResource(rootId, "/")
-		c.API.Resources = append(c.API.Resources, resource)
+		rs := entity.NewResource(rootId, "/")
+		c.Resources = append(c.Resources, rs)
 	} else {
 		rootId = r.Id
 	}
 
-	for _, r := range c.API.Resources {
+	for _, r := range c.Resources {
 		// If "Id" exists, the resource has already been deployed
-		if r.Id != "" && api.ResourceExists(restId, r.Id) {
-			d.log.Infof("Endpoint %s has already deployed.\n", r.Path)
+		if r.Id != "" && api.ResourceExists(c.RestApiId, r.Id) {
+			d.log.Infof("Resource %s has already been deployed.\n", r.Path)
 		} else {
-			api.CreateResourceRecursive(restId, r.Path)
+			api.CreateResourceRecursive(c.RestApiId, r.Path)
 		}
 		if igs := r.GetIntegrations(); igs != nil {
-			if r.IntegrationId == "" {
-				r.IntegrationId, err = api.CreateResource(restId, r.Id, "{proxy+}")
+			if r.IntegrationId == nil {
+				var iid string
+				iid, err = api.CreateResource(c.RestApiId, r.Id, "{proxy+}")
 				if err != nil {
 					return
 				}
+				r.IntegrationId = &iid
 			}
 			for method, integration := range igs {
-				if err = api.PutIntegration(restId, r.IntegrationId, method, integration); err != nil {
+				if err = api.PutIntegration(c.RestApiId, *r.IntegrationId, method, integration); err != nil {
 					return
 				}
 			}
 		}
 	}
-
-	if s := ctx.String("stage"); s != "" {
-		api.Deploy(restId, s)
-	}
-	return
+	// Obviously succeed, returns nil
+	return nil
 }
 
 func (d *Deploy) deployStorage(c *config.Config, ctx *args.Context) error {
-	bucket := c.Project.S3BucketName
+	bucket := c.S3BucketName
 	s3 := request.NewS3(c)
 
 	// Upload local objects to remote
@@ -304,4 +334,9 @@ func (d *Deploy) listLocalObjects(root string) ([]*entity.StorageObject, error) 
 		return nil
 	})
 	return objects, err
+}
+
+func (d *Deploy) deployStage(c *config.Config, ctx *args.Context) error {
+	// TODO implement
+	return nil
 }

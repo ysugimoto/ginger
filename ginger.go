@@ -42,12 +42,10 @@ func main() {
 		cmd = command.NewConfig()
 	case command.FUNCTION, command.FN:
 		cmd = command.NewFunction()
-	case command.API:
-		cmd = command.NewAPI()
+	case command.RESOURCE, command.R:
+		cmd = command.NewResource()
 	case command.DEPLOY:
 		cmd = command.NewDeploy()
-	case command.LOG:
-		cmd = command.NewLog()
 	case command.STORAGE, command.S:
 		cmd = command.NewStorage()
 	case command.INTEGRATE, command.I:
