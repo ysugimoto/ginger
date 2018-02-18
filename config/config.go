@@ -9,7 +9,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	"github.com/ysugimoto/ginger/internal/entity"
+	"github.com/ysugimoto/ginger/entity"
 )
 
 // Load loads configuration and map to Config struct.

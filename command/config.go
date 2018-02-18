@@ -3,8 +3,8 @@ package command
 import (
 	"github.com/ysugimoto/go-args"
 
-	"github.com/ysugimoto/ginger/internal/config"
-	"github.com/ysugimoto/ginger/internal/logger"
+	"github.com/ysugimoto/ginger/config"
+	"github.com/ysugimoto/ginger/logger"
 )
 
 // Config struct is the accept 'ginger config' command.

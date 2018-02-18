@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ysugimoto/ginger/internal/command"
+	"github.com/ysugimoto/ginger/command"
 	"github.com/ysugimoto/go-args"
 )
 

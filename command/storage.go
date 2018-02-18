@@ -3,8 +3,8 @@ package command
 import (
 	"fmt"
 
-	"github.com/ysugimoto/ginger/internal/config"
-	"github.com/ysugimoto/ginger/internal/logger"
+	"github.com/ysugimoto/ginger/config"
+	"github.com/ysugimoto/ginger/logger"
 	"github.com/ysugimoto/go-args"
 )
 

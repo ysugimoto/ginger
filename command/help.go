@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/ysugimoto/ginger/internal/assets"
+	"github.com/ysugimoto/ginger/assets"
 	"github.com/ysugimoto/go-args"
 )
 
