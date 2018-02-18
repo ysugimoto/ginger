@@ -99,12 +99,12 @@ func (d *Deploy) Run(ctx *args.Context) {
 		if err = d.runHook(c); err != nil {
 			return
 		}
-		d.log.Print("========== Storage Deployment ==========")
-		if err = d.deployStorage(c, ctx); err != nil {
-			return
-		}
 		d.log.Print("========== Function Deployment ==========")
 		if err = d.deployFunction(c, ctx); err != nil {
+			return
+		}
+		d.log.Print("========== Storage Deployment ==========")
+		if err = d.deployStorage(c, ctx); err != nil {
 			return
 		}
 		d.log.Print("========== Resource Deployment ==========")
