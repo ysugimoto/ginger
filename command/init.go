@@ -11,7 +11,6 @@ import (
 	"github.com/ysugimoto/go-args"
 
 	"github.com/ysugimoto/ginger/config"
-	"github.com/ysugimoto/ginger/entity"
 	"github.com/ysugimoto/ginger/logger"
 )
 
@@ -49,48 +48,42 @@ func (i *Init) Run(ctx *args.Context) {
 		i.log.Printf("Create storage directory: %s\n", c.StoragePath)
 		os.Mkdir(c.StoragePath, 0755)
 	}
-	if _, err := os.Stat(c.VendorPath); err != nil {
-		i.log.Printf("Create vendor directory: %s\n", c.VendorPath)
-		os.Mkdir(c.VendorPath, 0755)
-	}
 	if _, err := os.Stat(c.StagePath); err != nil {
 		i.log.Printf("Create stages directory: %s\n", c.StagePath)
 		os.Mkdir(c.StagePath, 0755)
 	}
-	project := entity.Project{
-		Name:                filepath.Base(c.Root),
-		Profile:             "",
-		Region:              "us-east-1",
-		LambdaExecutionRole: "",
-		S3BucketName:        filepath.Base(c.Root),
-	}
+
+	c.ProjectName = filepath.Base(c.Root)
+	c.Profile = ""
+	c.DefaultLambdaRole = ""
+	c.Region = "us-east-1"
+	c.S3BucketName = "ginger-storage-" + filepath.Base(c.Root)
 
 	if p := ctx.String("profile"); p != "" {
-		project.Profile = p
-		i.log.Printf("Profile set as %s\n", project.Profile)
+		c.Profile = p
+		i.log.Printf("Profile set as %s\n", c.Profile)
 	}
-	if r := i.regionFromProfile(project.Profile); r != "" {
-		project.Region = r
-		i.log.Printf("Region set as %s\n", project.Region)
+	if r := i.regionFromProfile(c.Profile); r != "" {
+		c.Region = r
+		i.log.Printf("Region set as %s\n", c.Region)
 	}
 	if r := ctx.String("region"); r != "" {
-		project.Region = r
-		i.log.Printf("Region set as %s\n", project.Region)
+		c.Region = r
+		i.log.Printf("Region set as %s\n", c.Region)
 	}
 	if r := ctx.String("role"); r != "" {
-		project.LambdaExecutionRole = r
+		c.DefaultLambdaRole = r
 	}
 	if b := ctx.String("bucket"); b != "" {
-		project.S3BucketName = b
+		c.S3BucketName = b
 	}
 
-	if project.LambdaExecutionRole == "" {
-		i.log.Warn("Lambda Execution Role isn't set. Please run 'ginger config --role [role name]' before you deploy function.")
+	if c.DefaultLambdaRole == "" {
+		i.log.Warn("Default Lambda Execution Role isn't set. If you want to set, run 'ginger config --role [role name]'")
 	} else {
-		i.log.Printf("Lambda role set as %s\n", project.LambdaExecutionRole)
+		i.log.Printf("Default Lambda role set as %s\n", c.DefaultLambdaRole)
 	}
-	i.log.Warnf("S3 bucket name \"%s\" might not be enable to use. Then you should run `ginger config --bucket [bucket name]` to change it.", project.S3BucketName)
-	c.Project = project
+	i.log.Warnf("S3 bucket name \"%s\" might not be enable to use. Then you should run `ginger config --bucket [bucket name]` to change it.", c.S3BucketName)
 	c.Write()
 	NewInstall().Run(ctx)
 	i.log.Info("ginger initalized successfully!")

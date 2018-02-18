@@ -35,6 +35,7 @@ Usage:
 SubCommands:
   init     : Initialize project
   install  : Install ginger dependencies
+  config   : Update project configurations
   function : Manage Go runtime Lambda functions
   api      : Manage APIGateway resources
   stage    : Manage APIGateway stages

@@ -1,8 +1,9 @@
 package config
 
 import (
-	"fmt"
 	"os"
+	"sort"
+	"strings"
 	"sync"
 
 	"path/filepath"
@@ -10,56 +11,8 @@ import (
 	"github.com/BurntSushi/toml"
 
 	"github.com/ysugimoto/ginger/entity"
+	"github.com/ysugimoto/ginger/logger"
 )
-
-// Load loads configuration and map to Config struct.
-// this function always returns although the config file didn't exist.
-// Then you can confirm as Exists() on config file exists or not.
-func Load() *Config {
-	root := findUp()
-
-	c := &Config{
-		Root:         root,
-		Path:         filepath.Join(root, "Ginger.toml"),
-		FunctionPath: filepath.Join(root, "functions"),
-		StoragePath:  filepath.Join(root, "storage"),
-		VendorPath:   filepath.Join(root, "vendor"),
-		StagePath:    filepath.Join(root, "stages"),
-		Project:      entity.Project{},
-		Functions:    entity.Functions{},
-		API: entity.API{
-			Resources: make([]*entity.Resource, 0),
-		},
-	}
-
-	if _, err := os.Stat(c.Path); err == nil {
-		c.exists = true
-		if _, err = toml.DecodeFile(c.Path, c); err != nil {
-			fmt.Println("Syntax error found on configuration file!", err)
-			os.Exit(1)
-		}
-	}
-	// Resources need to sort by short paths.
-	c.API.Sort()
-	return c
-}
-
-// findUp finds ginger project root from current working directory.
-func findUp() string {
-	path, _ := os.Getwd()
-
-	for {
-		if path == "/" {
-			break
-		}
-		if _, err := os.Stat(filepath.Join(path, "Ginger.toml")); err == nil {
-			return path
-		}
-		path = filepath.Dir(path)
-	}
-	path, _ = os.Getwd()
-	return path
-}
 
 // Config is the struct which maps configuration file into this.
 // Ensure call Write() to update configuration.
@@ -68,19 +21,33 @@ type Config struct {
 	Root         string `toml:"-"`
 	Path         string `toml:"-"`
 	FunctionPath string `toml:"-"`
-	VendorPath   string `toml:"-"`
+	LibPath      string `toml:"-"`
 	StoragePath  string `toml:"-"`
 	StagePath    string `toml:"-"`
 
-	Project   entity.Project   `toml:"project"`
-	Functions entity.Functions `toml:"function"`
-	API       entity.API       `toml:"api"`
-	Stages    entity.Stages    `toml:"stages"`
+	RestApiId         string             `toml:"rest_api_id"`
+	ProjectName       string             `toml:"project_name"`
+	Profile           string             `toml:"profile"`
+	Region            string             `toml:"region"`
+	DefaultLambdaRole string             `toml:"default_lambda_role"`
+	S3BucketName      string             `toml:"s3_bucket_name"`
+	DeployHookCommand string             `toml:"deploy_hook_command"`
+	Resources         []*entity.Resource `toml:"resources"`
+
+	Queue map[string]*entity.Function `toml:"-"`
+	log   *logger.Logger              `toml:"-"`
 }
 
 // Exists() returns bool which config file exists or not.
 func (c *Config) Exists() bool {
 	return c.exists
+}
+
+// Sort resources by shorter path to access by shorter resource
+func (c *Config) SortResources() {
+	sort.Slice(c.Resources, func(i, j int) bool {
+		return len(strings.Split(c.Resources[i].Path, "/")) < len(strings.Split(c.Resources[j].Path, "/"))
+	})
 }
 
 // Mutex for file I/O
@@ -94,4 +61,11 @@ func (c *Config) Write() {
 	defer fp.Close()
 	enc := toml.NewEncoder(fp)
 	enc.Encode(c)
+	for name, fn := range c.Queue {
+		p := filepath.Join(c.FunctionPath, name, "Function.toml")
+		fp, _ := os.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		defer fp.Close()
+		enc := toml.NewEncoder(fp)
+		enc.Encode(fn)
+	}
 }

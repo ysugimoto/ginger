@@ -30,8 +30,9 @@ Usage:
 Options:
   --profile : Using profile name
   --region  : Set project region
-  --role    : Set lambda execution role
+  --role    : Set default lambda execution role
   --bucket  : Set S3 bucket name which you want to use
+  --hook    : Register deploy hook command
 `
 }
 
@@ -46,23 +47,23 @@ func (c *Config) Run(ctx *args.Context) {
 
 	var v string
 	if v = ctx.String("profile"); v != "" {
-		conf.Project.Profile = v
+		conf.Profile = v
 		c.log.Printf("Set use profile as \"%s\"\n", v)
 	}
 	if v = ctx.String("region"); v != "" {
-		conf.Project.Region = v
+		conf.Region = v
 		c.log.Printf("Set AWS region as \"%s\"\n", v)
 	}
 	if v = ctx.String("role"); v != "" {
-		conf.Project.LambdaExecutionRole = v
+		conf.DefaultLambdaRole = v
 		c.log.Printf("Set Lambda execution role as \"%s\"\n", v)
 	}
 	if v = ctx.String("bucket"); v != "" {
-		conf.Project.S3BucketName = v
+		conf.S3BucketName = v
 		c.log.Printf("Set S3 bucket name as \"%s\"\n", v)
 	}
 	if v = ctx.String("hook"); v != "" {
-		conf.Project.DeployHook = v
+		conf.DeployHookCommand = v
 		c.log.Print("Set deploy hook command.")
 	}
 	c.log.Info("Configuration updated!")

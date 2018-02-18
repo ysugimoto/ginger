@@ -150,9 +150,9 @@ func (a *APIGatewayRequest) CreateResourceRecursive(restId, path string) (err er
 	)
 	for _, part := range strings.Split(path, "/") {
 		parts += "/" + part
-		if rs = a.config.API.Find(parts); rs == nil {
+		if rs, err = a.config.LoadResource(parts); err != nil {
 			rs = entity.NewResource("", parts)
-			a.config.API.Resources = append(a.config.API.Resources, rs)
+			a.config.Resources = append(a.config.Resources, rs)
 		}
 		if rs.Id == "" {
 			if rs.Id, err = a.CreateResource(restId, parentId, part); err != nil {
@@ -167,9 +167,9 @@ func (a *APIGatewayRequest) CreateResourceRecursive(restId, path string) (err er
 func (a *APIGatewayRequest) PutIntegration(restId, resourceId, method string, i *entity.Integration) (err error) {
 	switch i.IntegrationType {
 	case "lambda":
-		fn := a.config.Functions.Find(i.LambdaFunction)
-		if fn == nil {
-			err = fmt.Errorf("Function %s couldn't find in your project.\n", i.LambdaFunction)
+		fn, err := a.config.LoadFunction(*i.LambdaFunction)
+		if err != nil {
+			err = fmt.Errorf("Function %s couldn't find in your project.\n", *i.LambdaFunction)
 			a.errorLog(err)
 			return err
 		}
@@ -177,7 +177,7 @@ func (a *APIGatewayRequest) PutIntegration(restId, resourceId, method string, i 
 		return a.putLambdaIntegration(restId, resourceId, method, i.Path+"/{proxy+}", fn)
 	case "s3":
 		a.PutMethod(restId, resourceId, method)
-		return a.putS3Integration(restId, resourceId, method, i.Bucket)
+		return a.putS3Integration(restId, resourceId, method, *i.Bucket)
 	default:
 		a.log.Errorf("Unexpected integration type %s\n", i.IntegrationType)
 		return nil
@@ -208,7 +208,7 @@ func (a *APIGatewayRequest) PutMethod(restId, resourceId, httpMethod string) err
 func (a *APIGatewayRequest) generateIntegrationUri(lambdaArn *string) string {
 	return fmt.Sprintf(
 		"arn:aws:apigateway:%s:lambda:path/2015-03-31/functions/%s/invocations",
-		a.config.Project.Region,
+		a.config.Region,
 		*lambdaArn,
 	)
 }
@@ -216,7 +216,7 @@ func (a *APIGatewayRequest) generateIntegrationUri(lambdaArn *string) string {
 func (a *APIGatewayRequest) generateSourceArn(account, restId, httpMethod, path string) string {
 	return fmt.Sprintf(
 		"arn:aws:execute-api:%s:%s:%s/*/%s%s/{proxy+}",
-		a.config.Project.Region,
+		a.config.Region,
 		account,
 		restId,
 		httpMethod,

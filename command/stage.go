@@ -12,7 +12,6 @@ import (
 	"github.com/ysugimoto/go-args"
 
 	"github.com/ysugimoto/ginger/config"
-	"github.com/ysugimoto/ginger/entity"
 	"github.com/ysugimoto/ginger/input"
 	"github.com/ysugimoto/ginger/logger"
 	"github.com/ysugimoto/ginger/request"
@@ -95,31 +94,17 @@ func (s *Stage) createStage(c *config.Config, ctx *args.Context) (err error) {
 	name := ctx.String("name")
 	if name == "" {
 		return exception("Stage name didn't supplied. Run with --name option.")
-	} else if c.Stages.Exists(name) {
+	} else if _, err := c.LoadStage(name); err == nil {
 		return exception("Stage already defined.")
 	}
 
-	stg := &entity.Stage{
-		Name: name,
-	}
-	fileName := filepath.Join(c.StagePath, fmt.Sprintf("%s.json", name))
-	if err = ioutil.WriteFile(fileName, []byte("{\n\n}"), 0644); err != nil {
+	fileName := filepath.Join(c.StagePath, fmt.Sprintf("%s.toml", name))
+	template := fmt.Sprintf("name = \"%s\"\n\n[variables]\n", name)
+	if err = ioutil.WriteFile(fileName, []byte(template), 0644); err != nil {
 		return exception("Create stage json error: %s", err.Error())
 	}
 
-	api := request.NewAPIGateway(c)
-	if c.API.RestId == "" {
-		s.log.Print("The REST API hasn't been created yet. Create new REST API.")
-		if c.API.RestId, err = api.CreateRestAPI(c.Project.Name); err != nil {
-			return nil
-		}
-	}
-	if err := api.CreateStage(c.API.RestId, name); err != nil {
-		return nil
-	}
-
-	c.Stages = append(c.Stages, stg)
-	s.log.Infof("Stage created. To manage stage variables, edit stages/%s.json.\n", name)
+	s.log.Infof("Stage created. To manage stage variables, edit stages/%s.toml.\n", name)
 	return nil
 }
 
@@ -129,37 +114,40 @@ func (s *Stage) deleteStage(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
 		return exception("Stage name didn't supplied. Run with --name option.")
-	} else if !c.Stages.Exists(name) {
+	} else if _, err := c.LoadStage(name); err != nil {
 		return exception("Stage not defined.")
 	}
 
-	if !ctx.Has("force") && !input.Bool("Also deletes all deployments for this stage. Are you sure?") {
-		s.log.Warn("Abort.")
-		return nil
+	if c.RestApiId != "" {
+		if !ctx.Has("force") && !input.Bool("Also deletes all deployments for this stage. Are you sure?") {
+			s.log.Warn("Abort.")
+			return nil
+		}
+
+		api := request.NewAPIGateway(c)
+		s.log.Print("Checking stage exintence...")
+		if api.StageExists(c.RestApiId, name) {
+			if err := api.DeleteStage(c.RestApiId, name); err != nil {
+				s.log.Error("Failed to delete from AWS. Please delete manually.")
+			}
+		} else {
+			s.log.Print("Not found in AWS API Gateway. Skip it.")
+		}
 	}
 
-	api := request.NewAPIGateway(c)
-	s.log.Print("Checking stage exintence...")
-	if c.API.RestId != "" && api.StageExists(c.API.RestId, name) {
-		if err := api.DeleteStage(c.API.RestId, name); err != nil {
-			s.log.Error("Failed to delete from AWS. Please delete manually.")
-		}
-	} else {
-		s.log.Print("Not found in AWS API Gateway. Skip it.")
-	}
 	s.log.Print("Deleting files...")
-	if err := os.Remove(filepath.Join(c.StagePath, fmt.Sprintf("%s.json", name))); err != nil {
+	if err := os.Remove(filepath.Join(c.StagePath, fmt.Sprintf("%s.toml", name))); err != nil {
 		return exception("Delete file error: %s", err.Error())
 	}
-	c.Stages = c.Stages.Remove(name)
 	s.log.Info("Stage deleted successfully.")
 	return nil
 }
 
-// listStage shows registered functions.
+// listStage shows registered stages.
 func (s *Stage) listStage(c *config.Config, ctx *args.Context) error {
 	api := request.NewAPIGateway(c)
-	stages := api.GetStages(c.API.RestId)
+	stages := api.GetStages(c.RestApiId)
+	localStages, _ := c.LoadAllStages()
 	t, err := tty.Open()
 	if err != nil {
 		return exception("Couldn't open tty")
@@ -173,7 +161,7 @@ func (s *Stage) listStage(c *config.Config, ctx *args.Context) error {
 	fmt.Println(line)
 	fmt.Printf("%-24s %-24s %-12s %-12s %-12s\n", "StageName", "DeploymentId", "Deployed", "Created", "LastUpdated")
 	fmt.Println(line)
-	for i, stg := range c.Stages {
+	for i, stg := range localStages {
 		c := "-"
 		u := "-"
 		j := "-"
@@ -190,7 +178,7 @@ func (s *Stage) listStage(c *config.Config, ctx *args.Context) error {
 			}
 		}
 		fmt.Printf("%-24s %-24s %-12s %-12s %-12s\n", stg.Name, j, d, c, u)
-		if i != len(stages)-1 {
+		if i != len(localStages)-1 {
 			fmt.Println(strings.Repeat("-", w))
 		}
 	}

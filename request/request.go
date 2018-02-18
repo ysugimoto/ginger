@@ -21,10 +21,10 @@ func generateStatementId(sType string) string {
 
 // Create common AWS session.
 func createAWSSession(c *config.Config) *session.Session {
-	conf := aws.NewConfig().WithRegion(c.Project.Region)
-	if c.Project.Profile != "" {
+	conf := aws.NewConfig().WithRegion(c.Region)
+	if c.Profile != "" {
 		conf = conf.WithCredentials(
-			credentials.NewSharedCredentials("", c.Project.Profile),
+			credentials.NewSharedCredentials("", c.Profile),
 		)
 	}
 	return session.New(conf)

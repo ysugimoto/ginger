@@ -8,7 +8,7 @@ import (
 
 // Choice displays selection on supplied list.
 func Choice(m string, exacts []string) string {
-	fmt.Println(m)
+	fmt.Println(color + prefix + m + reset)
 	ret := make(chan string, 1)
 	terminate := make(chan struct{})
 	go cho.Run(exacts, ret, terminate)

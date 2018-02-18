@@ -1,11 +1,14 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
+	"syscall"
 
 	"io/ioutil"
+	"os/signal"
 	"path/filepath"
 
 	"github.com/iancoleman/strcase"
@@ -102,7 +105,7 @@ func (f *Function) Run(ctx *args.Context) {
 	case FUNCTION_LIST:
 		err = f.listFunction(c, ctx)
 	case FUNCTION_LOG:
-		NewLog().tailLogs(c, ctx)
+		err = f.logFunction(c, ctx)
 	default:
 		fmt.Println(f.Help())
 	}
@@ -112,9 +115,11 @@ func (f *Function) Run(ctx *args.Context) {
 func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
-		return exception("Function name didn't supplied. Run with --name option.")
-	} else if c.Functions.Exists(name) {
-		return exception("Function already defined.")
+		name = input.String("Type function name")
+	}
+
+	if _, err := c.LoadFunction(name); err == nil {
+		return exception("Function \"%s\" already defined.", name)
 	}
 
 	m := ctx.Int("memory")
@@ -123,10 +128,12 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	} else if m%64 > 0 {
 		return exception("Memory size must be multiple of 64.")
 	}
+
 	fn := &entity.Function{
 		Name:       name,
 		MemorySize: int64(m),
 		Timeout:    int64(ctx.Int("timeout")),
+		Role:       c.DefaultLambdaRole,
 	}
 	fnPath := filepath.Join(c.FunctionPath, name)
 	if err := os.Mkdir(fnPath, 0755); err != nil {
@@ -140,8 +147,8 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 		return exception("Create function error: %s", err.Error())
 	}
 
-	c.Functions = append(c.Functions, fn)
-	f.log.Info("Function created successfully!")
+	c.Queue[name] = fn
+	f.log.Infof("Function \"%s\" created successfully.\n", name)
 	return nil
 }
 
@@ -188,13 +195,15 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
 		return exception("Function name didn't supplied. Run with --name option.")
-	} else if !c.Functions.Exists(name) {
-		return exception("Function not defined.")
+	}
+	_, err := c.LoadFunction(name)
+	if err != nil {
+		return exception(err.Error())
 	}
 
 	f.log.Printf("Deleting function: %s\n", name)
 	lambda := request.NewLambda(c)
-	f.log.Print("Checking lambda function exintence...")
+	f.log.Print("Checking lambda function existence...")
 	if lambda.FunctionExists(name) {
 		if ctx.Has("force") || input.Bool("Function exists on AWS. Also delete from there?") {
 			if err := lambda.DeleteFunction(name); err != nil {
@@ -204,12 +213,13 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 	} else {
 		f.log.Print("Not found in AWS. Skip it.")
 	}
+
 	f.log.Print("Deleting files...")
 	if err := os.RemoveAll(filepath.Join(c.FunctionPath, name)); err != nil {
 		return exception("Delete dierectory error: %s", err.Error())
 	}
-	c.Functions = c.Functions.Remove(name)
-	f.log.Info("Function deleted successfully.")
+	c.DeleteFunction(name)
+	f.log.Infof("Function \"%s\" deleted successfully.\n", name)
 	return nil
 }
 
@@ -219,8 +229,10 @@ func (f *Function) configFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
 		return exception("Function name didn't supplied. Run with --name option.")
-	} else if !c.Functions.Exists(name) {
-		return exception("Function %s does not defined.", name)
+	}
+	fn, err := c.LoadFunction(name)
+	if err != nil {
+		return exception("Function %s could not find.", name)
 	}
 
 	m := ctx.Int("memory")
@@ -229,11 +241,13 @@ func (f *Function) configFunction(c *config.Config, ctx *args.Context) error {
 	} else if m%64 > 0 {
 		return exception("Memory size must be multiple of 64.")
 	}
-	fn := c.Functions.Find(name)
 	fn.MemorySize = int64(m)
 	fn.Timeout = int64(ctx.Int("timeout"))
-	lambda := request.NewLambda(c)
-	return lambda.UpdateFunctionConfiguration(fn)
+	if r := ctx.String("role"); r != "" {
+		fn.Role = r
+	}
+	f.log.Infof("Function \"%s\" configuration updated.\n", name)
+	return nil
 }
 
 // invokeFunction invokes lambda function which deployed in AWS.
@@ -241,9 +255,10 @@ func (f *Function) configFunction(c *config.Config, ctx *args.Context) error {
 func (f *Function) invokeFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
-		return exception("Function name didn't supplied. Run with --name option.")
-	} else if !c.Functions.Exists(name) {
-		return exception("Function not defined.")
+		name = input.String("Type function name which you want to invoke")
+	}
+	if _, err := c.LoadFunction(name); err != nil {
+		return exception("Function \"%s\" could not find.", name)
 	}
 
 	lambda := request.NewLambda(c)
@@ -271,6 +286,7 @@ func (f *Function) invokeFunction(c *config.Config, ctx *args.Context) error {
 
 // listFunction shows registered functions.
 func (f *Function) listFunction(c *config.Config, ctx *args.Context) error {
+	functions, _ := c.LoadAllFunctions()
 	t, err := tty.Open()
 	if err != nil {
 		return exception("Couldn't open tty")
@@ -284,15 +300,42 @@ func (f *Function) listFunction(c *config.Config, ctx *args.Context) error {
 	fmt.Println(line)
 	fmt.Printf("%-36s %-16s %-16s %-4s\n", "name", "memory", "timeout", "deployed")
 	fmt.Println(line)
-	for i, fn := range c.Functions {
+	for i, fn := range functions {
 		d := "no"
 		if fn.Arn != "" {
 			d = "yes"
 		}
 		fmt.Printf("%-36s %-16s %-16s %-4s\n", fn.Name, fmt.Sprintf("%d MB", fn.MemorySize), fmt.Sprintf("%d sec", fn.Timeout), d)
-		if i != len(c.Functions)-1 {
+		if i != len(functions)-1 {
 			fmt.Println(strings.Repeat("-", w))
 		}
+	}
+	return nil
+}
+
+// logFunction displays tailing logs via CloudWatch.
+func (f *Function) logFunction(c *config.Config, ctx *args.Context) error {
+	name := ctx.String("name")
+	if name == "" {
+		return exception("Function name didn't supplied. Run with --name option.")
+	} else if _, err := c.LoadFunction(name); err != nil {
+		return exception("Function \"%s\" could not find.", name)
+	}
+
+	f.log.Warnf("Tailing cloudwatch logs for function \"%s\"...\n", name)
+	ctc, cancel := context.WithCancel(context.Background())
+	cwl := request.NewCloudWatchLogsRequest(c)
+	go cwl.TailLogs(
+		ctc,
+		fmt.Sprintf("/aws/lambda/%s", name),
+		ctx.String("filter"),
+	)
+
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+	select {
+	case <-ch:
+		cancel()
 	}
 	return nil
 }
