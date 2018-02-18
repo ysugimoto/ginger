@@ -337,6 +337,24 @@ func (d *Deploy) listLocalObjects(root string) ([]*entity.StorageObject, error) 
 }
 
 func (d *Deploy) deployStage(c *config.Config, ctx *args.Context) error {
-	// TODO implement
+	name := ctx.String("stage")
+	stage, err := c.LoadStage(name)
+	if err != nil {
+		d.log.Print("Stage \"%s\" doesn't exists. Create...")
+		fileName := filepath.Join(c.StagePath, fmt.Sprintf("%s.toml", name))
+		template := fmt.Sprintf("name = \"%s\"\n\n[variables]\n", name)
+		if err = ioutil.WriteFile(fileName, []byte(template), 0644); err != nil {
+			return exception("Create stage error: %s", err.Error())
+		}
+	}
+	stage, err = c.LoadStage(ctx.String("stage"))
+	api := request.NewAPIGateway(c)
+	if err = api.CreateStage(c.RestApiId, stage.Name); err != nil {
+		return nil
+	}
+	if err = api.Deploy(c.RestApiId, stage.Name); err != nil {
+		return nil
+	}
+
 	return nil
 }
