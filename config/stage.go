@@ -13,7 +13,7 @@ import (
 )
 
 func (c *Config) LoadStage(name string) (*entity.Stage, error) {
-	path := filepath.Join(c.StagePath, name, fmt.Sprintf("%s.toml"))
+	path := filepath.Join(c.StagePath, fmt.Sprintf("%s.toml", name))
 	if _, err := os.Stat(path); err != nil {
 		return nil, errors.Wrap(err, "Stage configuration file does not exist")
 	}

@@ -21,7 +21,7 @@ const (
 	FUNCTION  = "function"
 	FN        = "fn" // alias for "function"
 	RESOURCE  = "resource"
-	R         = "e" // alias for "resource"
+	R         = "r" // alias for "resource"
 	STORAGE   = "storage"
 	S         = "s" // alias for "storage"
 	INTEGRATE = "integrate"

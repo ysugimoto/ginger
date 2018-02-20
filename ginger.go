@@ -30,6 +30,7 @@ func main() {
 		Alias("bucket", "", "").
 		Alias("directory", "d", "").
 		Alias("delete", "", nil).
+		Alias("message", "", "").
 		Parse(os.Args[1:])
 
 	var cmd command.Command

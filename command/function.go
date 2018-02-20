@@ -164,7 +164,11 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 			strcase.ToCamel(name),
 			"request events.APIGatewayProxyRequest",
 			"(events.APIGatewayProxyResponse, error)",
-			"events.APIGatewayProxyResponse{}, nil",
+			`events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers: map[string]string{"X-Ginger-Response": "succeed"},
+		Body: "Hello, ginger lambda!",
+	}, nil`,
 			strcase.ToCamel(name),
 		)
 	case "s3":
