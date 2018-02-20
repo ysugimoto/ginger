@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"os"
 
 	"path/filepath"
@@ -11,8 +12,17 @@ import (
 	"github.com/ysugimoto/go-args"
 
 	"github.com/ysugimoto/ginger/config"
+	"github.com/ysugimoto/ginger/input"
+	"github.com/ysugimoto/ginger/internal/colors"
 	"github.com/ysugimoto/ginger/logger"
 )
+
+const lambdaRoleInquiry = `[Need lambda execution role]
+If you will use Lambda function, Need to set "LambdaExecutionRole".
+This is because lambda requires permission to run function itself or external service.`
+
+const s3BucketInquiry = `[S3 bucket name]
+If you will use S3 storage for static file serve, We recommend to set 'S3BucketName'.`
 
 // Init is the struct for initalize ginger project.
 // This command generates config file and some
@@ -57,7 +67,6 @@ func (i *Init) Run(ctx *args.Context) {
 	c.Profile = ""
 	c.DefaultLambdaRole = ""
 	c.Region = "us-east-1"
-	c.S3BucketName = "ginger-storage-" + filepath.Base(c.Root)
 
 	if p := ctx.String("profile"); p != "" {
 		c.Profile = p
@@ -79,11 +88,21 @@ func (i *Init) Run(ctx *args.Context) {
 	}
 
 	if c.DefaultLambdaRole == "" {
-		i.log.Warn("Default Lambda Execution Role isn't set. If you want to set, run 'ginger config --role [role name]'")
-	} else {
-		i.log.Printf("Default Lambda role set as %s\n", c.DefaultLambdaRole)
+		fmt.Println(colors.Pink(lambdaRoleInquiry))
+		if role := input.String("Input lambda execution role ARN (empty to skip)"); role == "" {
+			i.log.Warn("Lambda Execution Role isn't set. If you want to set, run 'ginger config --role [role name]'")
+		} else {
+			c.DefaultLambdaRole = role
+		}
 	}
-	i.log.Warnf("S3 bucket name \"%s\" might not be enable to use. Then you should run `ginger config --bucket [bucket name]` to change it.", c.S3BucketName)
+	if c.S3BucketName == "" {
+		fmt.Println(colors.Pink(s3BucketInquiry))
+		if bucketName := input.String(fmt.Sprintf("Input bucket name (default: ginger-%s, empty to skip)", c.ProjectName)); bucketName == "" {
+			c.S3BucketName = fmt.Sprintf("ginger-%s", c.ProjectName)
+		} else {
+			c.S3BucketName = bucketName
+		}
+	}
 	c.Write()
 	NewInstall().Run(ctx)
 	i.log.Info("ginger initalized successfully!")

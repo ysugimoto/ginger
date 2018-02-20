@@ -2,16 +2,11 @@ package logger
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/mattn/go-colorable"
-)
 
-// Ansi colors
-const (
-	red    = "\033[31m"
-	yellow = "\033[93m"
-	green  = "\033[92m"
-	reset  = "\033[0m"
+	"github.com/ysugimoto/ginger/internal/colors"
 )
 
 var stdout = colorable.NewColorableStdout()
@@ -31,35 +26,41 @@ func WithNamespace(ns string) *Logger {
 func (l *Logger) AddNamespace(ns string) {
 	l.ns += "." + ns
 }
+func (l *Logger) RemoveNamespace(ns string) {
+	index := strings.Index(l.ns, "."+ns)
+	if index != -1 {
+		l.ns = l.ns[0:index]
+	}
+}
 
 // Info() outputs information log with green color.
 func (l *Logger) Info(message ...interface{}) {
-	fmt.Fprintln(stdout, green+"["+l.ns+"] "+fmt.Sprint(message...)+reset)
+	fmt.Fprintln(stdout, colors.Green("["+l.ns+"] "+fmt.Sprint(message...)))
 }
 
 // Infof() outputs formatted information log with green color.
 func (l *Logger) Infof(format string, args ...interface{}) {
-	fmt.Fprintf(stdout, green+"["+l.ns+"] "+format+reset, args...)
+	fmt.Fprintf(stdout, colors.Green("["+l.ns+"] "+format), args...)
 }
 
 // Warn() outputs warning log with yellow color.
 func (l *Logger) Warn(message ...interface{}) {
-	fmt.Fprintln(stdout, yellow+"["+l.ns+"] "+fmt.Sprint(message...)+reset)
+	fmt.Fprintln(stdout, colors.Yellow("["+l.ns+"] "+fmt.Sprint(message...)))
 }
 
 // Warnf() outputs formatted warning log with yellow color.
 func (l *Logger) Warnf(format string, args ...interface{}) {
-	fmt.Fprintf(stdout, yellow+"["+l.ns+"] "+format+reset, args...)
+	fmt.Fprintf(stdout, colors.Yellow("["+l.ns+"] "+format), args...)
 }
 
 // Error() outputs error log with red color.
 func (l *Logger) Error(message ...interface{}) {
-	fmt.Fprintln(stdout, red+"["+l.ns+"] "+fmt.Sprint(message...)+reset)
+	fmt.Fprintln(stdout, colors.Red("["+l.ns+"] "+fmt.Sprint(message...)))
 }
 
 // Errorf() outputs formatted error log with red color.
 func (l *Logger) Errorf(format string, args ...interface{}) {
-	fmt.Fprintf(stdout, red+"["+l.ns+"] "+format+reset, args...)
+	fmt.Fprintf(stdout, colors.Red("["+l.ns+"] "+format), args...)
 }
 
 // Print() outputs log with default color.

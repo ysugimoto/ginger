@@ -52,7 +52,8 @@ Usage:
 
 Subcommand:
   function : Deploy functions (default: all, one of function if --name option supplied)
-  api      : Deploy apis (default: all, one of path if --name option supplied)
+  resource : Deploy resources (default: all, one of path if --name option supplied)
+  storage  : Deploy storage
   all      : Deploy both of functions and apis
   help     : Show this help
 
@@ -148,6 +149,7 @@ func (d *Deploy) runHook(c *config.Config) error {
 // deployFunction deploys functions to AWS Lambda.
 func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 	d.log.AddNamespace("function")
+	defer d.log.RemoveNamespace("function")
 	targets := []*entity.Function{}
 	if name := ctx.String("name"); name != "" {
 		fn, err := c.LoadFunction(name)
@@ -237,7 +239,8 @@ func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
 
 // deployAPI deploys resources to AWS APIGateway.
 func (d *Deploy) deployResource(c *config.Config, ctx *args.Context) (err error) {
-	d.log.AddNamespace("api")
+	d.log.AddNamespace("resource")
+	defer d.log.RemoveNamespace("resource")
 	api := request.NewAPIGateway(c)
 
 	if c.RestApiId == "" {
@@ -257,6 +260,9 @@ func (d *Deploy) deployResource(c *config.Config, ctx *args.Context) (err error)
 		}
 		rs := entity.NewResource(rootId, "/")
 		c.Resources = append(c.Resources, rs)
+	} else if r.Id == "" {
+		r.Id, err = api.GetResourceIdByPath(c.RestApiId, "/")
+		rootId = r.Id
 	} else {
 		rootId = r.Id
 	}
@@ -289,6 +295,8 @@ func (d *Deploy) deployResource(c *config.Config, ctx *args.Context) (err error)
 }
 
 func (d *Deploy) deployStorage(c *config.Config, ctx *args.Context) error {
+	d.log.AddNamespace("storage")
+	defer d.log.RemoveNamespace("storage")
 	bucket := c.S3BucketName
 	s3 := request.NewS3(c)
 
@@ -337,22 +345,21 @@ func (d *Deploy) listLocalObjects(root string) ([]*entity.StorageObject, error) 
 }
 
 func (d *Deploy) deployStage(c *config.Config, ctx *args.Context) error {
+	d.log.AddNamespace("stage")
+	defer d.log.RemoveNamespace("stage")
+
 	name := ctx.String("stage")
-	stage, err := c.LoadStage(name)
+	_, err := c.LoadStage(name)
 	if err != nil {
-		d.log.Print("Stage \"%s\" doesn't exists. Create...")
+		d.log.Warnf("Stage \"%s\" doesn't exists. Create...\n", name)
 		fileName := filepath.Join(c.StagePath, fmt.Sprintf("%s.toml", name))
 		template := fmt.Sprintf("name = \"%s\"\n\n[variables]\n", name)
 		if err = ioutil.WriteFile(fileName, []byte(template), 0644); err != nil {
 			return exception("Create stage error: %s", err.Error())
 		}
 	}
-	stage, err = c.LoadStage(ctx.String("stage"))
 	api := request.NewAPIGateway(c)
-	if err = api.CreateStage(c.RestApiId, stage.Name); err != nil {
-		return nil
-	}
-	if err = api.Deploy(c.RestApiId, stage.Name); err != nil {
+	if err = api.Deploy(c.RestApiId, name, ctx.String("message")); err != nil {
 		return nil
 	}
 

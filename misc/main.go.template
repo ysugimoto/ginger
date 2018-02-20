@@ -1,15 +1,15 @@
 package main
 
 import (
-		"context"
+	"context"
 
-		"github.com/aws/aws-lambda-go/lambda"%s
+	"github.com/aws/aws-lambda-go/lambda"%s
 )
 
 func %sHandler(ctx context.Context, %s) %s {
-		return %s
+	return %s
 }
 
 func main() {
-		lambda.Start(%sHandler)
+	lambda.Start(%sHandler)
 }
