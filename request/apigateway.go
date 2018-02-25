@@ -86,6 +86,17 @@ func (a *APIGatewayRequest) CreateRestAPI(name string) (string, error) {
 		Description: aws.String(
 			fmt.Sprintf("Managed by ginger, created at %s", time.Now().Format("2006-01-02: 15:04:05")),
 		),
+		BinaryMediaTypes: []*string{
+			aws.String("application/octet-stream"),
+			aws.String("application/javascipt"),
+			aws.String("application/json"),
+			aws.String("text/html"),
+			aws.String("text/plain"),
+			aws.String("text/css"),
+			aws.String("image/jpeg"),
+			aws.String("image/png"),
+			aws.String("image/gif"),
+		},
 	}
 	debugRequest(input)
 	result, err := a.svc.CreateRestApi(input)
@@ -189,18 +200,29 @@ func (a *APIGatewayRequest) PutIntegration(restId, resourceId, method string, i 
 			return err
 		}
 		a.PutMethod(restId, resourceId, method, nil)
-		return a.putLambdaIntegration(restId, resourceId, method, i.Path+"/{proxy+}", fn)
+		if err = a.putLambdaIntegration(restId, resourceId, method, i.Path, fn); err != nil {
+			a.errorLog(err)
+			return err
+		}
+		return a.PutMethodResponse(restId, resourceId, method, 200, nil, nil)
 	case "s3":
 		a.PutMethod(restId, resourceId, method, map[string]*bool{
 			"method.request.path.proxy": aws.Bool(true),
 		})
-		if err = a.putS3Integration(restId, resourceId, method, *i.Bucket); err != nil {
+		if err = a.putS3Integration(restId, resourceId, method, *i.BucketPath); err != nil {
 			a.errorLog(err)
 			return err
 		}
-		return a.PutMethodResponse(restId, resourceId, method, 200, map[string]*bool{
+		err = a.PutMethodResponse(restId, resourceId, method, 200, map[string]*bool{
 			"method.response.header.Content-Type": aws.Bool(false),
+		}, map[string]*string{
+			"application/json": aws.String("Empty"),
 		})
+		if err != nil {
+			a.errorLog(err)
+			return err
+		}
+		return a.PutS3IntegrationResponse(restId, resourceId, method)
 	default:
 		a.log.Errorf("Unexpected integration type %s\n", i.IntegrationType)
 		return nil
@@ -231,7 +253,7 @@ func (a *APIGatewayRequest) PutMethod(restId, resourceId, httpMethod string, req
 	return nil
 }
 
-func (a *APIGatewayRequest) PutMethodResponse(restId, resourceId, httpMethod string, statusCode int, responseParameters map[string]*bool) error {
+func (a *APIGatewayRequest) PutMethodResponse(restId, resourceId, httpMethod string, statusCode int, responseParameters map[string]*bool, responseModels map[string]*string) error {
 	a.log.Printf("Putting \"%s\" method response for resource \"%s\"...\n", httpMethod, resourceId)
 	input := &apigateway.PutMethodResponseInput{
 		HttpMethod: aws.String(httpMethod),
@@ -241,6 +263,9 @@ func (a *APIGatewayRequest) PutMethodResponse(restId, resourceId, httpMethod str
 	}
 	if responseParameters != nil {
 		input = input.SetResponseParameters(responseParameters)
+	}
+	if responseModels != nil {
+		input = input.SetResponseModels(responseModels)
 	}
 	debugRequest(input)
 	result, err := a.svc.PutMethodResponse(input)
@@ -265,7 +290,7 @@ func (a *APIGatewayRequest) generateIntegrationUri(lambdaArn *string) string {
 
 func (a *APIGatewayRequest) generateSourceArn(account, restId, httpMethod, path string) string {
 	return fmt.Sprintf(
-		"arn:aws:execute-api:%s:%s:%s/*/%s%s/{proxy+}",
+		"arn:aws:execute-api:%s:%s:%s/*/%s%s",
 		a.config.Region,
 		account,
 		restId,
@@ -279,12 +304,12 @@ func (a *APIGatewayRequest) putS3Integration(restId, resourceId, httpMethod, buc
 
 	input := &apigateway.PutIntegrationInput{
 		HttpMethod:            aws.String(httpMethod),
-		Type:                  aws.String("HTTP_PROXY"),
-		Uri:                   aws.String(fmt.Sprintf("https://s3.amazonaws.com/%s/{proxy}", bucketName)),
+		Type:                  aws.String("HTTP"),
+		Uri:                   aws.String(fmt.Sprintf("https://s3.amazonaws.com/%s/{proxy}", strings.Trim(bucketName, "/"))),
 		ResourceId:            aws.String(resourceId),
 		RestApiId:             aws.String(restId),
 		IntegrationHttpMethod: aws.String("ANY"),
-		// ContentHandling:       aws.String("CONVERT_TO_BINARY"),
+		ContentHandling:       aws.String("CONVERT_TO_BINARY"),
 		RequestParameters: map[string]*string{
 			"integration.request.path.proxy": aws.String("method.request.path.proxy"),
 		},
@@ -303,6 +328,34 @@ func (a *APIGatewayRequest) putS3Integration(restId, resourceId, httpMethod, buc
 	return nil
 }
 
+func (a *APIGatewayRequest) PutS3IntegrationResponse(restId, resourceId, httpMethod string) error {
+	a.log.Printf("Putting S3 integration response\n")
+
+	input := &apigateway.PutIntegrationResponseInput{
+		HttpMethod: aws.String(httpMethod),
+		RestApiId:  aws.String(restId),
+		ResourceId: aws.String(resourceId),
+		StatusCode: aws.String("200"),
+		ResponseParameters: map[string]*string{
+			"method.response.header.Content-Type": aws.String("integration.response.header.Content-Type"),
+		},
+		ResponseTemplates: map[string]*string{
+			"application/json": aws.String(""),
+		},
+		SelectionPattern: aws.String(""),
+		ContentHandling:  aws.String("CONVERT_TO_BINARY"),
+	}
+	debugRequest(input)
+	result, err := a.svc.PutIntegrationResponse(input)
+	if err != nil {
+		a.errorLog(err)
+		return err
+	}
+	debugRequest(result)
+	a.log.Print("Put integration response successfully.")
+	return nil
+}
+
 func (a *APIGatewayRequest) putLambdaIntegration(restId, resourceId, httpMethod, path string, fn *entity.Function) error {
 	a.log.Printf("Putting Lambda integration for %s...\n", path)
 
@@ -318,6 +371,7 @@ func (a *APIGatewayRequest) putLambdaIntegration(restId, resourceId, httpMethod,
 		ResourceId:            aws.String(resourceId),
 		RestApiId:             aws.String(restId),
 		IntegrationHttpMethod: aws.String("POST"),
+		ContentHandling:       aws.String("CONVERT_TO_BINARY"),
 	}
 	debugRequest(input)
 	result, err := a.svc.PutIntegration(input)

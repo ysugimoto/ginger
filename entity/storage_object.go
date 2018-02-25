@@ -2,14 +2,17 @@ package entity
 
 import (
 	"os"
+	"strings"
 
 	"io/ioutil"
+	"net/http"
 )
 
 type StorageObject struct {
-	Data []byte
-	Key  string
-	Info os.FileInfo
+	Data     []byte
+	Key      string
+	MimeType string
+	Info     os.FileInfo
 }
 
 func NewStorageObject(key string, info os.FileInfo) *StorageObject {
@@ -22,5 +25,13 @@ func NewStorageObject(key string, info os.FileInfo) *StorageObject {
 
 func (s *StorageObject) Load(path string) (err error) {
 	s.Data, err = ioutil.ReadFile(path)
-	return err
+	if err != nil {
+		return err
+	}
+	mime := http.DetectContentType(s.Data)
+	if index := strings.Index(mime, ";"); index != -1 {
+		mime = mime[0:index]
+	}
+	s.MimeType = mime
+	return nil
 }

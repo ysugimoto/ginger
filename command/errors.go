@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -20,5 +21,5 @@ func debugTrace(err error) {
 
 // exception makes formatted string error interface.
 func exception(message string, binds ...interface{}) error {
-	return errors.New(fmt.Sprintf(message, binds...))
+	return errors.New(strings.TrimRight(fmt.Sprintf(message, binds...), "\n") + "\n")
 }

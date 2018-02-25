@@ -84,7 +84,7 @@ func ale() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "ale", size: 1061, mode: os.FileMode(420), modTime: time.Unix(1518347191, 0)}
+	info := bindataFileInfo{name: "ale", size: 1061, mode: os.FileMode(420), modTime: time.Unix(1518375939, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -104,7 +104,7 @@ func mainGoTemplate() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "main.go.template", size: 179, mode: os.FileMode(420), modTime: time.Unix(1519129428, 0)}
+	info := bindataFileInfo{name: "main.go.template", size: 179, mode: os.FileMode(420), modTime: time.Unix(1519484462, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

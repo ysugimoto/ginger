@@ -12,20 +12,18 @@ const COMMAND_HEADER = `========================================================
 ============================================================`
 
 const (
-	INIT      = "init"
-	INSTALL   = "install"
-	CONFIG    = "config"
-	BUILD     = "build"
-	DEPLOY    = "deploy"
-	STAGE     = "stage"
-	FUNCTION  = "function"
-	FN        = "fn" // alias for "function"
-	RESOURCE  = "resource"
-	R         = "r" // alias for "resource"
-	STORAGE   = "storage"
-	S         = "s" // alias for "storage"
-	INTEGRATE = "integrate"
-	I         = "i" // alias for "integrate"
+	INIT     = "init"
+	INSTALL  = "install"
+	CONFIG   = "config"
+	DEPLOY   = "deploy"
+	D        = "d"
+	STAGE    = "stage"
+	FUNCTION = "function"
+	FN       = "fn" // alias for "function"
+	RESOURCE = "resource"
+	R        = "r" // alias for "resource"
+	STORAGE  = "storage"
+	S        = "s" // alias for "storage"
 )
 
 // Command is the interface implemented by structs that can run the command

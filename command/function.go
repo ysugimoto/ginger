@@ -19,19 +19,22 @@ import (
 	"github.com/ysugimoto/ginger/config"
 	"github.com/ysugimoto/ginger/entity"
 	"github.com/ysugimoto/ginger/input"
+	"github.com/ysugimoto/ginger/internal/util"
 	"github.com/ysugimoto/ginger/logger"
 	"github.com/ysugimoto/ginger/request"
 )
 
 const (
-	FUNCTION_CREATE = "create"
-	FUNCTION_DELETE = "delete"
-	FUNCTION_INVOKE = "invoke"
-	FUNCTION_CONFIG = "config"
-	FUNCTION_DEPLOY = "deploy"
-	FUNCTION_LIST   = "list"
-	FUNCTION_HELP   = "help"
-	FUNCTION_LOG    = "log"
+	FUNCTION_CREATE  = "create"
+	FUNCTION_DELETE  = "delete"
+	FUNCTION_INVOKE  = "invoke"
+	FUNCTION_CONFIG  = "config"
+	FUNCTION_DEPLOY  = "deploy"
+	FUNCTION_MOUNT   = "mount"
+	FUNCTION_UNMOUNT = "unmount"
+	FUNCTION_LIST    = "list"
+	FUNCTION_HELP    = "help"
+	FUNCTION_LOG     = "log"
 )
 
 // Function is the struct of AWS Lambda function operation command.
@@ -57,21 +60,25 @@ Usage:
   $ ginger fn [operation] [options]
 
 Operation:
-  create : Create new function
-  delete : Delete function
-  invoke : Invoke function
-  config : Modify function setting
-  deploy : Deploy functions
-  list   : List functions
-  log    : Tail function log
-  help   : Show this help
+  create  : Create new function
+  delete  : Delete function
+  invoke  : Invoke function
+  config  : Modify function setting
+  mount   : Mount function to destination path
+  unmount : Unmount function from destination path
+  deploy  : Deploy functions
+  list    : List functions
+  log     : Tail function log
+  help    : Show this help
 
 Options:
-  -n, --name    : [all] Function name (required)
+  -n, --name    : [all] Function name
   -e, --event   : [create] Purpose of function event [s3|apigateway]
   -e, --event   : [invoke] Event source (JSON string) or "@file" for filename
   -t, --timeout : [config] Function timeout configuration
       --memory  : [config] Memory size configuration (must be a multiple of 64 MB)
+  -p, --path    : [mount] Path name
+      --method  : [mount] Method name to integration
 `
 }
 
@@ -102,6 +109,8 @@ func (f *Function) Run(ctx *args.Context) {
 		err = f.configFunction(c, ctx)
 	case FUNCTION_DEPLOY:
 		err = NewDeploy().deployFunction(c, ctx)
+	case FUNCTION_MOUNT:
+		err = f.mountFunction(c, ctx)
 	case FUNCTION_LIST:
 		err = f.listFunction(c, ctx)
 	case FUNCTION_LOG:
@@ -232,7 +241,7 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 func (f *Function) configFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
-		return exception("Function name didn't supplied. Run with --name option.")
+		name = c.ChooseFunction()
 	}
 	fn, err := c.LoadFunction(name)
 	if err != nil {
@@ -259,7 +268,7 @@ func (f *Function) configFunction(c *config.Config, ctx *args.Context) error {
 func (f *Function) invokeFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
-		name = input.String("Type function name which you want to invoke")
+		name = c.ChooseFunction()
 	}
 	if _, err := c.LoadFunction(name); err != nil {
 		return exception("Function \"%s\" could not find.", name)
@@ -321,8 +330,9 @@ func (f *Function) listFunction(c *config.Config, ctx *args.Context) error {
 func (f *Function) logFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
-		return exception("Function name didn't supplied. Run with --name option.")
-	} else if _, err := c.LoadFunction(name); err != nil {
+		name = c.ChooseFunction()
+	}
+	if _, err := c.LoadFunction(name); err != nil {
 		return exception("Function \"%s\" could not find.", name)
 	}
 
@@ -341,5 +351,86 @@ func (f *Function) logFunction(c *config.Config, ctx *args.Context) error {
 	case <-ch:
 		cancel()
 	}
+	return nil
+}
+
+// mountFunction makes integration between API Gateway resource and Lambda function
+func (f *Function) mountFunction(c *config.Config, ctx *args.Context) error {
+	name := ctx.String("name")
+	if name == "" {
+		name = c.ChooseFunction()
+	}
+	if _, err := c.LoadFunction(name); err != nil {
+		return exception("Function %s could't find in your project.", name)
+	}
+
+	path := ctx.String("path")
+	if path == "" {
+		path = c.ChooseResource()
+	}
+	rs, err := c.LoadResource(path)
+	if err != nil {
+		return exception("Endpoint %s couldn't find in your project.\n", path)
+	}
+
+	var method string
+	if m := ctx.String("method"); m != "" {
+		method = strings.ToUpper(m)
+	} else {
+		method = util.ChooseMethod("ANY")
+	}
+
+	ig := rs.GetIntegration(method)
+	if ig == nil {
+		ig = entity.NewIntegration("lambda", name, rs.Path)
+		rs.AddIntegration(method, ig)
+		f.log.Infof("Function %s mouted to resource %s.\n", name, path)
+		return nil
+	}
+	switch ig.IntegrationType {
+	case "lambda":
+		return exception("Resource already mounted as lambda. Unmount before use it.")
+	case "s3":
+		return exception("Resource already mounted as storage. Unmount before use it.")
+	}
+	return exception("Undefined integration type.")
+}
+
+// unmountFunction makes integration between API Gateway resource and Lambda function
+func (f *Function) unmountFunction(c *config.Config, ctx *args.Context) error {
+	path := ctx.String("path")
+	if path == "" {
+		path = c.ChooseResource()
+	}
+	rs, err := c.LoadResource(path)
+	if err != nil {
+		return exception("Endpoint %s couldn't find in your project.\n", path)
+	}
+
+	var method string
+	if m := ctx.String("method"); m != "" {
+		method = strings.ToUpper(m)
+	} else {
+		method = util.ChooseMethod("ANY")
+	}
+
+	ig := rs.GetIntegration(method)
+	if ig == nil {
+		return exception("No integration found, Abort.")
+	}
+	switch ig.IntegrationType {
+	case "s3":
+		return exception("Storage already integrated. to remove it, run 'ginger storage unmount'.")
+	case "lambda":
+		if rs.Id != "" {
+			api := request.NewAPIGateway(c)
+			api.DeleteMethod(c.RestApiId, rs.Id, method)
+			api.DeleteIntegration(c.RestApiId, rs.Id, method)
+		}
+		rs.DeleteIntegration(method)
+	default:
+		return exception("Undefined integration type.")
+	}
+	f.log.Infof("Function unmounted for resource %s.\n", path)
 	return nil
 }

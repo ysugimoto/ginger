@@ -9,7 +9,8 @@ type Integration struct {
 	IntegrationType string  `toml:"type"`
 	LambdaFunction  *string `toml:"lambda_function"`
 	Path            string  `toml:"path"`
-	Bucket          *string `toml:"bucket"`
+	BucketPath      *string `toml:"bucket_path"`
+	ProxyResourceId *string `toml:"proxy_resource_id"`
 }
 
 func NewIntegration(iType, value, path string) *Integration {
@@ -21,7 +22,7 @@ func NewIntegration(iType, value, path string) *Integration {
 	case "lambda":
 		i.LambdaFunction = &value
 	case "s3":
-		i.Bucket = &value
+		i.BucketPath = &value
 	}
 	return i
 }
@@ -31,7 +32,7 @@ func (i *Integration) String() string {
 	case "lambda":
 		return i.IntegrationType + ":" + *i.LambdaFunction
 	case "s3":
-		return i.IntegrationType + ":" + *i.Bucket
+		return i.IntegrationType + ":" + *i.BucketPath
 	default:
 		return ""
 	}

@@ -162,19 +162,16 @@ func (r *Resource) deleteEndpoint(c *config.Config, ctx *args.Context) error {
 func (r *Resource) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 	path := ctx.String("path")
 	if path == "" {
-		path = input.String("Type resource patn which you want to invoke")
+		path = input.String("Type invoke path")
 	}
-	rs, err := c.LoadResource(path)
-	if err != nil {
-		return exception("Resource \"%s\" could not find.\n", path)
-	} else if rs.Id == "" {
-		return exception("Resource %s has not deployed yet. Please deploy first.\n", path)
+	if path == "" {
+		path = "/"
 	}
 
 	stage := ctx.String("stage")
 	// Build request
 	host := fmt.Sprintf("%s.execute-api.%s.amazonaws.com", c.RestApiId, c.Region)
-	callUrl := fmt.Sprintf("https://%s/%s%s/_invoke", host, stage, path)
+	callUrl := fmt.Sprintf("https://%s/%s%s", host, stage, path)
 
 	method := "GET"
 	if m := ctx.String("method"); m != "" {

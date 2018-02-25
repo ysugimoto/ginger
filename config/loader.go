@@ -36,7 +36,6 @@ func Load() *Config {
 			os.Exit(1)
 		}
 	}
-
 	c.SortResources()
 	return c
 }

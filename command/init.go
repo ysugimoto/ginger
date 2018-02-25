@@ -88,7 +88,7 @@ func (i *Init) Run(ctx *args.Context) {
 	}
 
 	if c.DefaultLambdaRole == "" {
-		fmt.Println(colors.Pink(lambdaRoleInquiry))
+		fmt.Println(colors.Yellow(lambdaRoleInquiry))
 		if role := input.String("Input lambda execution role ARN (empty to skip)"); role == "" {
 			i.log.Warn("Lambda Execution Role isn't set. If you want to set, run 'ginger config --role [role name]'")
 		} else {
@@ -96,7 +96,7 @@ func (i *Init) Run(ctx *args.Context) {
 		}
 	}
 	if c.S3BucketName == "" {
-		fmt.Println(colors.Pink(s3BucketInquiry))
+		fmt.Println(colors.Yellow(s3BucketInquiry))
 		if bucketName := input.String(fmt.Sprintf("Input bucket name (default: ginger-%s, empty to skip)", c.ProjectName)); bucketName == "" {
 			c.S3BucketName = fmt.Sprintf("ginger-%s", c.ProjectName)
 		} else {
