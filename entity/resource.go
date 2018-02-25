@@ -6,11 +6,10 @@ import (
 
 // Resource is the entity struct which maps 'api.resources' slice in configuration.
 type Resource struct {
-	Id            string                  `toml:"id"`
-	Path          string                  `toml:"path"`
-	IntegrationId *string                 `toml:"integration_id"`
-	Integrations  map[string]*Integration `toml:"integrations"`
-	UserDefined   bool                    `toml:"user_defined"`
+	Id           string                  `toml:"id"`
+	Path         string                  `toml:"path"`
+	Integrations map[string]*Integration `toml:"integrations"`
+	UserDefined  bool                    `toml:"user_defined"`
 }
 
 func NewResource(id, path string) *Resource {

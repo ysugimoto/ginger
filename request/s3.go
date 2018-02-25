@@ -83,6 +83,7 @@ func (s *S3Request) PutObject(bucket string, so *entity.StorageObject) error {
 		Key:           aws.String(so.Key),
 		ContentLength: aws.Int64(so.Info.Size()),
 		ACL:           aws.String("public-read"),
+		ContentType:   aws.String(so.MimeType),
 	}
 	debugRequest(input)
 	result, err := s.svc.PutObject(input)

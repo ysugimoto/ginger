@@ -45,12 +45,10 @@ func main() {
 		cmd = command.NewFunction()
 	case command.RESOURCE, command.R:
 		cmd = command.NewResource()
-	case command.DEPLOY:
+	case command.DEPLOY, command.D:
 		cmd = command.NewDeploy()
 	case command.STORAGE, command.S:
 		cmd = command.NewStorage()
-	case command.INTEGRATE, command.I:
-		cmd = command.NewIntegrate()
 	case command.STAGE:
 		cmd = command.NewStage()
 	default:

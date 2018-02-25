@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ysugimoto/ginger/entity"
+	"github.com/ysugimoto/ginger/input"
 )
 
 func (c *Config) LoadFunction(name string) (*entity.Function, error) {
@@ -59,4 +60,28 @@ func (c *Config) LoadAllFunctions() ([]*entity.Function, error) {
 		return nil
 	})
 	return functions, err
+}
+
+func (c *Config) ChooseFunction() string {
+	choose := []string{}
+	filepath.Walk(c.FunctionPath, func(path string, info os.FileInfo, e error) error {
+		if e != nil {
+			return e
+		} else if !info.IsDir() {
+			return nil
+		} else if path == c.FunctionPath {
+			return nil
+		}
+		fn, err := c.LoadFunction(info.Name())
+		if err != nil {
+			c.log.Warnf("Skip: couldn't list function \"%s\": %s\n", info.Name(), err.Error())
+			return nil
+		}
+		choose = append(choose, fn.Name)
+		return nil
+	})
+	if len(choose) == 0 {
+		return ""
+	}
+	return input.Choice("Select target fucntion", choose)
 }
