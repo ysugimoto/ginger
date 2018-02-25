@@ -27,7 +27,7 @@ definitions:
            command: |
              cd /go/src/github.com/ysugimoto/ginger
              dep ensure
-             make production
+             make
         - persist_to_workspace:
            root: /go/src/github.com/ysugimoto/ginger
            paths:
@@ -40,6 +40,7 @@ definitions:
         - setup_remote_docker
         - run:
            command: |
+             sudo apt-get install jq
              sudo apt-get install python-setuptools
              sudo apt-get install python-pip
              sudo pip install awscli
