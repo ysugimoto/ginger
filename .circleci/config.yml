@@ -27,7 +27,7 @@ definitions:
            command: |
              cd /go/src/github.com/ysugimoto/ginger
              dep ensure
-             make
+             go build
         - persist_to_workspace:
            root: /go/src/github.com/ysugimoto/ginger
            paths:
@@ -46,7 +46,7 @@ definitions:
              sudo pip install awscli
              export PATH=$PATH:/usr/local/bin
              cd /go/src/github.com/ysugimoto/ginger
-             go build
+             make publish
 
 jobs:
   <<: *job_presets
