@@ -46,7 +46,7 @@ definitions:
              sudo pip install awscli
              export PATH=$PATH:/usr/local/bin
              cd /go/src/github.com/ysugimoto/ginger
-             make publish
+             go build
 
 jobs:
   <<: *job_presets
