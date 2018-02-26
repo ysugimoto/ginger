@@ -18,6 +18,8 @@ var dependencyPackages = []string{
 	"github.com/aws/aws-lambda-go",
 }
 
+// Install is the struct for install ginger project dependencies.
+// This command installs project dependencies.
 type Install struct {
 	Command
 	log *logger.Logger
@@ -64,6 +66,22 @@ func (i *Install) Run(ctx *args.Context) {
 	}
 }
 
+// installDependencies installs dependencies via "go get".
+//
+// >>> doc
+//
+// ## Install dependencies
+//
+// Install dependency packages for build lambda function.
+//
+// ```
+// $ ginger install
+// ```
+//
+// This command is run automatically on initialize, but if you checkout project after initialize,
+// You can install dependency packages via this command.
+//
+// <<< doc
 func (i *Install) installDependencies(pkg, tmpDir string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	cmd := exec.Command("go", "get", pkg)

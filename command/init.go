@@ -44,6 +44,52 @@ func (i *Init) Help() string {
 }
 
 // Run the init command.
+//
+// >>> doc
+//
+// ## Initialize project
+//
+// Initialize ginger project at current directory.
+//
+// ```
+// $ ginger init [options]
+// ```
+//
+// If you want to use (probably almost case yes) external Go package, we suggest you should put project directory under the `$GOPATH` to enable to detect vendor tree.
+//
+// For example:
+//
+// ```
+// cd $GOATH/src/github.com/your/project
+// ginger init
+// ```
+//
+// The ginger init command will work as following:
+//
+// - Create `Ginger.toml` file which is used for project configuration
+// - Create `functions` directory which is used for function management
+// - Create `stages` directory which is used for stage variable management
+// - Create `.ginger`  directory which is used for put dependency packags. Those packages will be loaded on deploy phase..
+// - Install dependency packages.
+//
+// Note that the `Ginger.toml` is readable and configurable, but almost values are added or updated via subcommands.
+// So we don't recommend you change this file manually.
+//
+// And, when initializing project, ginger asks two questions.
+//
+// #### LambdaExecutionRole
+//
+// When ginger deploys function to AWS Lambda, execution role is necessary.
+// So you should input lambda exection role to use as default. You can create role on AWS IAM.
+// See: https://docs.aws.amazon.com/lambda/latest/dg/with-s3-example-create-iam-role.html
+//
+// Or, you can use specific role by each function by adding `Function.toml`.
+//
+// #### S3BucketName
+//
+// ginger uses S3 bucket name project director name as defaut. You can change this name.
+//
+// <<< doc
 func (i *Init) Run(ctx *args.Context) {
 	c := config.Load()
 	if c.Exists() {

@@ -7,7 +7,11 @@ import (
 	"github.com/ysugimoto/ginger/logger"
 )
 
-// Config struct is the accept 'ginger config' command.
+// Config is a struct for update project configuration.
+//
+// >>> doc
+// ## Update project configuration.
+// <<< doc
 type Config struct {
 	Command
 	log *logger.Logger
@@ -37,6 +41,25 @@ Options:
 }
 
 // Run the config command.
+//
+// >>> doc
+//
+// ### Update configuration
+//
+// Update configurations by supplied command options.
+//
+// ```
+// $ ginger config [options]
+// ```
+//
+// | option    | description                                                                  |
+// |:---------:|:----------------------------------------------------------------------------:|
+// | --profile | Accout profile name. If empty, ginger uses `default` or environment variable |
+// | --region  | Region name to deploy                                                        |
+// | --bucket  | S3 bucket name                                                               |
+// | --hook    | Deploy hook command                                                          |
+//
+// <<< doc
 func (c *Config) Run(ctx *args.Context) {
 	conf := config.Load()
 	if !conf.Exists() {

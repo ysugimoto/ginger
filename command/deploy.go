@@ -30,7 +30,7 @@ const (
 )
 
 // Deploy is the struct that manages function and api deployment.
-// deploy syncs between local cofiguration and AWS platform.
+// deploy syncs between local and AWS.
 type Deploy struct {
 	Command
 	log *logger.Logger
@@ -64,6 +64,22 @@ Options:
 }
 
 // Run the deploy command
+//
+// >>> doc
+//
+// ## Deploy all
+//
+// Deploy all functions, resources, storage items.
+//
+// ```
+// $ ginger deploy all [options]
+// ```
+//
+// | option  | description                                                       |
+// |:-------:|:-------------------------------------------------------------------:|
+// | --stage | Stage name. If this option is supplied, create deployment to stage. |
+//
+// <<< doc
 func (d *Deploy) Run(ctx *args.Context) {
 	c := config.Load()
 	if !c.Exists() {
@@ -147,6 +163,22 @@ func (d *Deploy) runHook(c *config.Config) error {
 }
 
 // deployFunction deploys functions to AWS Lambda.
+//
+// >>> doc
+//
+// ## Deploy functions
+//
+// Build and deploy lambda functions to AWS.
+//
+// ```
+// $ ginger deploy function [options]
+// ```
+//
+// | option | description                                                       |
+// |:------:|:-----------------------------------------------------------------:|
+// | --name | Function name. if this option didn't supply, deploy all functions |
+//
+// <<< doc
 func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 	d.log.AddNamespace("function")
 	defer d.log.RemoveNamespace("function")
@@ -238,6 +270,24 @@ func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
 }
 
 // deployAPI deploys resources to AWS APIGateway.
+//
+// >>> doc
+//
+// ## Deploy resources
+//
+// Deploy API Gateway resources to AWS.
+//
+// ```
+// $ ginger deploy resource [options]
+// ```
+//
+// If resource has some integrations, create integration as well.
+//
+// | option  | description                                                         |
+// |:-------:|:-------------------------------------------------------------------:|
+// | --stage | Stage name. If this option is supplied, create deployment to stage. |
+//
+// <<< doc
 func (d *Deploy) deployResource(c *config.Config, ctx *args.Context) (err error) {
 	d.log.AddNamespace("resource")
 	defer d.log.RemoveNamespace("resource")
@@ -286,6 +336,19 @@ func (d *Deploy) deployResource(c *config.Config, ctx *args.Context) (err error)
 	return nil
 }
 
+// deployStorage deploys storage items to AWS S3.
+//
+// >>> doc
+//
+// ## Deploy storage items
+//
+// Deploy storage files to S3.
+//
+// ```
+// $ ginger deploy storage
+// ```
+//
+// <<< doc
 func (d *Deploy) deployStorage(c *config.Config, ctx *args.Context) error {
 	d.log.AddNamespace("storage")
 	defer d.log.RemoveNamespace("storage")

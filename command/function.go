@@ -28,7 +28,6 @@ const (
 	FUNCTION_CREATE  = "create"
 	FUNCTION_DELETE  = "delete"
 	FUNCTION_INVOKE  = "invoke"
-	FUNCTION_CONFIG  = "config"
 	FUNCTION_DEPLOY  = "deploy"
 	FUNCTION_MOUNT   = "mount"
 	FUNCTION_UNMOUNT = "unmount"
@@ -63,7 +62,6 @@ Operation:
   create  : Create new function
   delete  : Delete function
   invoke  : Invoke function
-  config  : Modify function setting
   mount   : Mount function to destination path
   unmount : Unmount function from destination path
   deploy  : Deploy functions
@@ -75,8 +73,6 @@ Options:
   -n, --name    : [all] Function name
   -e, --event   : [create] Purpose of function event [s3|apigateway]
   -e, --event   : [invoke] Event source (JSON string) or "@file" for filename
-  -t, --timeout : [config] Function timeout configuration
-      --memory  : [config] Memory size configuration (must be a multiple of 64 MB)
   -p, --path    : [mount] Path name
       --method  : [mount] Method name to integration
 `
@@ -105,8 +101,6 @@ func (f *Function) Run(ctx *args.Context) {
 		err = f.deleteFunction(c, ctx)
 	case FUNCTION_INVOKE:
 		err = f.invokeFunction(c, ctx)
-	case FUNCTION_CONFIG:
-		err = f.configFunction(c, ctx)
 	case FUNCTION_DEPLOY:
 		err = NewDeploy().deployFunction(c, ctx)
 	case FUNCTION_MOUNT:
@@ -121,6 +115,23 @@ func (f *Function) Run(ctx *args.Context) {
 }
 
 // createFunction creates new function in local.
+//
+// >>> doc
+//
+// ## Create new function
+//
+// Create new lambda function.
+//
+// ```
+// $ ginger function create [options]
+// ```
+//
+// | option  | description                                                                                              |
+// |:-------:|:--------------------------------------------------------------------------------------------------------:|
+// | --name  | Function name. If this option isn't supplied, ginger will ask it                                         |
+// | --event | Function event source. function template switches by this option. enable values are `s3` or `apigateway` |
+//
+// <<< doc
 func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
@@ -204,6 +215,22 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 
 // deleteFunction deletes function.
 // If function has been deployed on AWS Lambda, also delete it.
+//
+// >>> doc
+//
+// ## Delete function
+//
+// Delete lambda function.
+//
+// ```
+// $ ginger function delete [options]
+// ```
+//
+// | option  | description              |
+// |:-------:|:------------------------:|
+// | --name  | [Required] function name |
+//
+// <<< doc
 func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
@@ -236,35 +263,25 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 	return nil
 }
 
-// configFunction modifies function configuration.
-// We can modifies memorysize and timeout.
-func (f *Function) configFunction(c *config.Config, ctx *args.Context) error {
-	name := ctx.String("name")
-	if name == "" {
-		name = c.ChooseFunction()
-	}
-	fn, err := c.LoadFunction(name)
-	if err != nil {
-		return exception("Function %s could not find.", name)
-	}
-
-	m := ctx.Int("memory")
-	if m < 128 {
-		return exception("Memory size must be greater than 128.")
-	} else if m%64 > 0 {
-		return exception("Memory size must be multiple of 64.")
-	}
-	fn.MemorySize = int64(m)
-	fn.Timeout = int64(ctx.Int("timeout"))
-	if r := ctx.String("role"); r != "" {
-		fn.Role = r
-	}
-	f.log.Infof("Function \"%s\" configuration updated.\n", name)
-	return nil
-}
-
 // invokeFunction invokes lambda function which deployed in AWS.
 // Make sure function is deployed to AWS before call it.
+//
+// >>> doc
+//
+// ## Invoke function
+//
+// Invoke lambda function.
+//
+// ```
+// $ ginger function invoke [options]
+// ```
+//
+// | option  | description                                                                                           |
+// |:-------:|:-----------------------------------------------------------------------------------------------------:|
+// | --name  | [Required] function name                                                                              |
+// | --event | Passing event source data. data must be JSON format string, or can specify file name like `@filename` |
+//
+// <<< doc
 func (f *Function) invokeFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
@@ -298,6 +315,18 @@ func (f *Function) invokeFunction(c *config.Config, ctx *args.Context) error {
 }
 
 // listFunction shows registered functions.
+//
+// >>> doc
+//
+// ## List function
+//
+// List registered lambda functions.
+//
+// ```
+// $ ginger function list
+// ```
+//
+// <<< doc
 func (f *Function) listFunction(c *config.Config, ctx *args.Context) error {
 	functions, _ := c.LoadAllFunctions()
 	t, err := tty.Open()
@@ -327,6 +356,22 @@ func (f *Function) listFunction(c *config.Config, ctx *args.Context) error {
 }
 
 // logFunction displays tailing logs via CloudWatch.
+//
+// >>> doc
+//
+// ## Log function
+//
+// Tailing log function output via CloudWatch Log.
+//
+// ```
+// $ ginger function log [options]
+// ```
+//
+// | option  | description                                                                                              |
+// |:-------:|:--------------------------------------------------------------------------------------------------------:|
+// | --name  | Function name. If this option isn't supplied, ginger will ask it                                         |
+//
+// <<< doc
 func (f *Function) logFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
@@ -355,6 +400,24 @@ func (f *Function) logFunction(c *config.Config, ctx *args.Context) error {
 }
 
 // mountFunction makes integration between API Gateway resource and Lambda function
+//
+// >>> doc
+//
+// ## Mount function
+//
+// Create function integration to destination resource.
+//
+// ```
+// $ ginger function mount [options]
+// ```
+//
+// | option   | description                                                      |
+// |:--------:|:----------------------------------------------------------------:|
+// | --name   | Function name. If this option isn't supplied, ginger will ask it |
+// | --path   | Resource path. If this option isn't supplied, ginger will ask it |
+// | --method | Integration method                                               |
+//
+// <<< doc
 func (f *Function) mountFunction(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
@@ -397,6 +460,23 @@ func (f *Function) mountFunction(c *config.Config, ctx *args.Context) error {
 }
 
 // unmountFunction makes integration between API Gateway resource and Lambda function
+//
+// >>> doc
+//
+// ## Mount function
+//
+// Delete function integration to destination resource.
+//
+// ```
+// $ ginger function unmount [options]
+// ```
+//
+// | option   | description                                                      |
+// |:--------:|:----------------------------------------------------------------:|
+// | --path   | Resource path. If this option isn't supplied, ginger will ask it |
+// | --method | Integration method                                               |
+//
+// <<< doc
 func (f *Function) unmountFunction(c *config.Config, ctx *args.Context) error {
 	path := ctx.String("path")
 	if path == "" {
