@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"archive/zip"
+	"crypto/md5"
 	"io/ioutil"
 	"os/exec"
 	"path/filepath"
@@ -208,6 +209,34 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 		if arn, err := lambda.DeployFunction(fn, buffer); err == nil {
 			d.log.Infof("Function %s deployed successfully!\n", fn.Name)
 			fn.Arn = arn
+		}
+	}
+
+	if err := d.deploySchedules(c, lambda, target); err != nil {
+		return exception(err.Error())
+	}
+	return nil
+}
+
+func (d *Deploy) deploySchedules(c *config.Config, lambda *request.LambdaReuqest, fns []*entity.Function) error {
+	cw := request.NewCloudWatch(c)
+	for _, fn := range fns {
+		if fn.Schedule == nil || *fn.Schedule == "" {
+			continue
+		}
+		hash := md5.Sum([]byte(*fn.Schedule))
+		scheduleName := fmt.Sprintf("ginger-schedule-%s", string(hash[:]))
+		arn, err := cw.GetScheduleArn(scheduleName)
+		if err != nil {
+			return err
+		} else if arn == "" {
+			arn, err = cw.CreateSchedule(scheduleName, *fn.Schedule)
+			if err != nil {
+				return err
+			}
+		}
+		if err = lambda.AddCloudWatchPermission(fn.Name, arn); err != nil {
+			return err
 		}
 	}
 	return nil

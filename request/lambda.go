@@ -204,6 +204,26 @@ func (l *LambdaRequest) AddAPIGatewayPermission(name, apiArn string) error {
 	return nil
 }
 
+func (l *LambdaRequest) AddCloudWatchPermission(name, eventArn string) error {
+	l.log.Printf("Add CloudWatch permission for %s...\n", name)
+	input := &lambda.AddPermissionInput{
+		Action:       aws.String("lambda:InvokeFunction"),
+		Principal:    aws.String("events.amazonaws.com"),
+		FunctionName: aws.String(name),
+		StatementId:  aws.String(generateStatementId("cloudwatch")),
+		SourceArn:    aws.String(eventArn),
+	}
+	debugRequest(input)
+	result, err := l.svc.AddPermission(input)
+	if err != nil {
+		l.errorLog(err)
+		return err
+	}
+	debugRequest(result)
+	l.log.Info("Permission added successfully.")
+	return nil
+}
+
 func (l *LambdaRequest) GetFunction(name string) (*lambda.FunctionConfiguration, error) {
 	l.log.Printf("Getting lambda function for %s...\n", name)
 	input := &lambda.GetFunctionInput{

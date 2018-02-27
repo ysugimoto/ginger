@@ -7,28 +7,32 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/service/cloudwatchevents"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 
 	"github.com/ysugimoto/ginger/config"
 	"github.com/ysugimoto/ginger/logger"
 )
 
-// CloudWatchLogsRequest is the struct which wrap AWS cloud watch logs service.
-type CloudWatchLogsRequest struct {
-	svc    *cloudwatchlogs.CloudWatchLogs
+// CloudWatchRequest is the struct which wrap AWS cloud watch logs service.
+type CloudWatchRequest struct {
+	svc    *cloudwatchlogs.CloudWatch
+	events *cloudwatchevents.CloudWatchEvents
 	log    *logger.Logger
 	config *config.Config
 }
 
-func NewCloudWatchLogsRequest(c *config.Config) *CloudWatchLogsRequest {
-	return &CloudWatchLogsRequest{
+func NewCloudWatchRequest(c *config.Config) *CloudWatchRequest {
+	sess := createAWSSession(c)
+	return &CloudWatchRequest{
 		config: c,
-		svc:    cloudwatchlogs.New(createAWSSession(c)),
-		log:    logger.WithNamespace("ginger.request.logs"),
+		svc:    cloudwatchlogs.New(sess),
+		events: cloudwatchevents.New(sess),
+		log:    logger.WithNamespace("ginger.request.cloudwatch"),
 	}
 }
 
-func (c *CloudWatchLogsRequest) errorLog(err error) {
+func (c *CloudWatchRequest) errorLog(err error) {
 	if aerr, ok := err.(awserr.Error); ok {
 		switch aerr.Code() {
 		case cloudwatchlogs.ErrCodeInvalidParameterException:
@@ -45,7 +49,7 @@ func (c *CloudWatchLogsRequest) errorLog(err error) {
 	}
 }
 
-func (c *CloudWatchLogsRequest) TailLogs(ctx context.Context, groupName, filter string) {
+func (c *CloudWatchRequest) TailLogs(ctx context.Context, groupName, filter string) {
 	// First request immediately
 	updatedTime, err := c.requestLog(groupName, filter, time.Now().UnixNano()/int64(time.Millisecond))
 	if err != nil {
@@ -69,7 +73,7 @@ func (c *CloudWatchLogsRequest) TailLogs(ctx context.Context, groupName, filter 
 	}
 }
 
-func (c *CloudWatchLogsRequest) requestLog(groupName, filter string, startTime int64) (int64, error) {
+func (c *CloudWatchRequest) requestLog(groupName, filter string, startTime int64) (int64, error) {
 	input := &cloudwatchlogs.FilterLogEventsInput{
 		Limit:        aws.Int64(100),
 		LogGroupName: aws.String(groupName),
@@ -94,4 +98,43 @@ func (c *CloudWatchLogsRequest) requestLog(groupName, filter string, startTime i
 		startTime++
 	}
 	return startTime, nil
+}
+
+func (c *CloudWatchRequest) CreateSchedule(name, expression string) (string, error) {
+	c.log.Printf("Create schedule for cloudwatch, name: %s, cron: %s...\n", name, expression)
+	input := &cloudwatchevents.PutRuleInput{
+		Description:        aws.String(fmt.Sprintf("Created by ginger for %s", c.config.ProjectName)),
+		Name:               aws.String(name),
+		ScheduleExpression: aws.String(expression),
+		State:              aws.String("enabled"),
+	}
+	debugRequest(input)
+	result, err := c.events.PutRule(input)
+	if err != nil {
+		c.errorLog(err)
+		return "", err
+	}
+	debugRequest(result)
+	c.log.Info("Schedule event created successfully")
+	return *result.RuleArn, nil
+}
+
+func (c *CloudWatchRequest) GetScheduleArn(name string) (string, error) {
+	input := &cloudwatchevents.ListRulesInput{
+		Limit:      aws.Int64(100),
+		NamePrefix: aws.String(name),
+	}
+	debugRequest(input)
+	result, err := c.events.ListRules(input)
+	if err != nil {
+		c.errorLog(err)
+		return false, err
+	}
+	debugRequest(result)
+	for _, r := range result.Rules {
+		if *r.Name == name {
+			return *r.RoleArn, nil
+		}
+	}
+	return "", nil
 }
