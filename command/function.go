@@ -338,7 +338,7 @@ func (f *Function) logFunction(c *config.Config, ctx *args.Context) error {
 
 	f.log.Warnf("Tailing cloudwatch logs for function \"%s\"...\n", name)
 	ctc, cancel := context.WithCancel(context.Background())
-	cwl := request.NewCloudWatchLogsRequest(c)
+	cwl := request.NewCloudWatchRequest(c)
 	go cwl.TailLogs(
 		ctc,
 		fmt.Sprintf("/aws/lambda/%s", name),

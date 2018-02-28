@@ -17,13 +17,14 @@ import (
 // Config is the struct which maps configuration file into this.
 // Ensure call Write() to update configuration.
 type Config struct {
-	exists       bool   `toml:"-"`
-	Root         string `toml:"-"`
-	Path         string `toml:"-"`
-	FunctionPath string `toml:"-"`
-	LibPath      string `toml:"-"`
-	StoragePath  string `toml:"-"`
-	StagePath    string `toml:"-"`
+	exists        bool   `toml:"-"`
+	Root          string `toml:"-"`
+	Path          string `toml:"-"`
+	FunctionPath  string `toml:"-"`
+	LibPath       string `toml:"-"`
+	StoragePath   string `toml:"-"`
+	StagePath     string `toml:"-"`
+	SchedulerPath string `toml:"-"`
 
 	RestApiId         string             `toml:"rest_api_id"`
 	ProjectName       string             `toml:"project_name"`

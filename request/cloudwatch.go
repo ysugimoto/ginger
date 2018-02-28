@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 
 	"github.com/ysugimoto/ginger/config"
+	"github.com/ysugimoto/ginger/entity"
 	"github.com/ysugimoto/ginger/logger"
 )
 
@@ -100,13 +101,17 @@ func (c *CloudWatchRequest) requestLog(groupName, filter string, startTime int64
 	return startTime, nil
 }
 
-func (c *CloudWatchRequest) CreateSchedule(name, expression string) (string, error) {
+func (c *CloudWatchRequest) CreateSchedule(sc *entity.Scheduler) (string, error) {
 	c.log.Printf("Create schedule for cloudwatch, name: %s, cron: %s...\n", name, expression)
+	state := "disabled"
+	if sc.Enable {
+		state = "enabled"
+	}
 	input := &cloudwatchevents.PutRuleInput{
 		Description:        aws.String(fmt.Sprintf("Created by ginger for %s", c.config.ProjectName)),
-		Name:               aws.String(name),
-		ScheduleExpression: aws.String(expression),
-		State:              aws.String("enabled"),
+		Name:               aws.String(sc.Name),
+		ScheduleExpression: aws.String(sc.Expression),
+		State:              aws.String(state),
 	}
 	debugRequest(input)
 	result, err := c.events.PutRule(input)
@@ -137,4 +142,20 @@ func (c *CloudWatchRequest) GetScheduleArn(name string) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func (c *CloudWatchRequest) DeleteSchedule(name string) error {
+	c.log.Printf("Delete schedule from cloudwatch, name %s...\n", name)
+	input := &cloudwatchevents.DeleteRuleInput{
+		Name: aws.String(name),
+	}
+	debugRequest(input)
+	result, err := c.events.DeleteRule(input)
+	if err != nil {
+		c.errorLog(err)
+		return err
+	}
+	debugRequest(result)
+	c.log.Info("Schedule event deleted successfully")
+	return nil
 }
