@@ -25,7 +25,7 @@ const (
 	R         = "r" // alias for "resource"
 	STORAGE   = "storage"
 	S         = "s" // alias for "storage"
-	SCHEDULER = "schedule"
+	SCHEDULER = "scheduler"
 	SC        = "sc" // alias for schedule
 )
 

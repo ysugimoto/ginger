@@ -51,6 +51,8 @@ func main() {
 		cmd = command.NewStorage()
 	case command.STAGE:
 		cmd = command.NewStage()
+	case command.SCHEDULER, command.SC:
+		cmd = command.NewScheduler()
 	default:
 		cmd = command.NewHelp()
 	}

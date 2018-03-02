@@ -1,7 +1,9 @@
 package input
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/ysugimoto/ginger/internal/colors"
@@ -9,8 +11,8 @@ import (
 
 // String() works as string input and returns its value.
 func String(m string) string {
-	var input string
+	reader := bufio.NewReader(os.Stdin)
 	fmt.Printf(colors.Blue(prefix+" %s: "), m)
-	fmt.Scanln(&input)
+	input, _ := reader.ReadString('\n')
 	return strings.TrimRight(input, "\n")
 }

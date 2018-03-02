@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"archive/zip"
-	"crypto/md5"
 	"io/ioutil"
 	"os/exec"
 	"path/filepath"
@@ -26,6 +25,8 @@ const (
 	DEPLOY_RESOURCE = "resource"
 	DEPLOY_R        = "r"
 	DEPLOY_STORAGE  = "storage"
+	DEPLOY_SCHEDULE = "schedule"
+	DEPLOY_S        = "s"
 	DEPLOY_ALL      = "all"
 	DEPLOY_HELP     = "help"
 )
@@ -55,6 +56,7 @@ Subcommand:
   function : Deploy functions (default: all, one of function if --name option supplied)
   resource : Deploy resources (default: all, one of path if --name option supplied)
   storage  : Deploy storage
+  schedule : Deploy schedulers
   all      : Deploy both of functions and apis
   help     : Show this help
 
@@ -92,6 +94,11 @@ func (d *Deploy) Run(ctx *args.Context) {
 			return
 		}
 		err = d.deployResource(c, ctx)
+	case DEPLOY_SCHEDULE, DEPLOY_S:
+		if err = d.runHook(c); err != nil {
+			return
+		}
+		err = d.deploySchedulers(c, ctx)
 	case DEPLOY_STORAGE:
 		if err = d.runHook(c); err != nil {
 			return
@@ -107,6 +114,10 @@ func (d *Deploy) Run(ctx *args.Context) {
 		}
 		d.log.Print("========== Storage Deployment ==========")
 		if err = d.deployStorage(c, ctx); err != nil {
+			return
+		}
+		d.log.Print("========== Scheduler Deployment ==========")
+		if err = d.deploySchedulers(c, ctx); err != nil {
 			return
 		}
 		d.log.Print("========== Resource Deployment ==========")
@@ -211,32 +222,39 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 			fn.Arn = arn
 		}
 	}
-
-	if err := d.deploySchedules(c, lambda, target); err != nil {
-		return exception(err.Error())
-	}
 	return nil
 }
 
-func (d *Deploy) deploySchedules(c *config.Config, lambda *request.LambdaReuqest, fns []*entity.Function) error {
+func (d *Deploy) deploySchedulers(c *config.Config, ctx *args.Context) error {
 	cw := request.NewCloudWatch(c)
-	for _, fn := range fns {
-		if fn.Schedule == nil || *fn.Schedule == "" {
-			continue
-		}
-		hash := md5.Sum([]byte(*fn.Schedule))
-		scheduleName := fmt.Sprintf("ginger-schedule-%s", string(hash[:]))
-		arn, err := cw.GetScheduleArn(scheduleName)
+	lambda := request.NewLambda(c)
+
+	scs, err := c.LoadAllSchedulers()
+	if err != nil {
+		return exception("Failed to get all schedulers: %s", err.Error())
+	}
+	for _, sc := range scs {
+		arn, err := cw.GetScheduleArn(sc.Name)
 		if err != nil {
-			return err
-		} else if arn == "" {
-			arn, err = cw.CreateSchedule(scheduleName, *fn.Schedule)
+			return nil
+		}
+		if arn == "" {
+			arn, err = cw.CreateSchedule(sc)
 			if err != nil {
-				return err
+				return nil
 			}
 		}
-		if err = lambda.AddCloudWatchPermission(fn.Name, arn); err != nil {
-			return err
+		for _, name := range sc.Functions {
+			fn, err := lambda.GetFunction(name)
+			if err != nil {
+				return nil
+			}
+			if err := lambda.AddCloudWatchPermission(*fn.FunctionName, arn); err != nil {
+				return nil
+			}
+			if err = cw.PutTarget(sc.Name, fn.FunctionArn); err != nil {
+				return nil
+			}
 		}
 	}
 	return nil
