@@ -40,7 +40,7 @@ Options:
 //
 // >>> doc
 //
-// ### Update configuration
+// ## Update configuration
 //
 // Update configurations by supplied command options.
 //

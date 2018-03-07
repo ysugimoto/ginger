@@ -1,6 +1,6 @@
 <!-- This document generated automatically -->
 
-### Update configuration
+## Update configuration
 
 Update configurations by supplied command options.
 
