@@ -23,8 +23,6 @@ func main() {
 		Alias("body", "b", "").
 		Alias("stage", "s", "").
 		Alias("event", "e", "").
-		Alias("memory", "m", 128).
-		Alias("timeout", "t", 3).
 		Alias("force", "", nil).
 		Alias("filter", "", "").
 		Alias("bucket", "", "").

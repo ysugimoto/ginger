@@ -113,7 +113,7 @@ func (c *CloudWatchRequest) requestLog(groupName, filter string, startTime int64
 	return startTime, nil
 }
 
-func (c *CloudWatchRequest) CreateSchedule(sc *entity.Scheduler) (string, error) {
+func (c *CloudWatchRequest) CreateOrUpdateSchedule(sc *entity.Scheduler) (string, error) {
 	c.log.Printf("Create schedule for cloudwatch, name: %s, cron: %s...\n", sc.Name, sc.Expression)
 	state := "DISABLED"
 	if sc.Enable {
@@ -150,7 +150,7 @@ func (c *CloudWatchRequest) GetScheduleArn(name string) (string, error) {
 	debugRequest(result)
 	for _, r := range result.Rules {
 		if *r.Name == name {
-			return *r.RoleArn, nil
+			return *r.Arn, nil
 		}
 	}
 	return "", nil
