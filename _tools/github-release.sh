@@ -8,5 +8,5 @@ RELEASE_ID=$(curl -X POST -H "${ACCEPT_HEADER}" -H "${TOKEN_HEADER}" -d "{\"tag_
 RELEASE_URL="https://uploads.github.com/repos/ysugimoto/ginger/releases/${RELEASE_ID}/assets"
 
 for FILE in `ls ./dist`; do
-  curl -v -X POST -H "${ACCEPT_HEADER}" -H "${TOKEN_HEADER}" -H "Content-Type: application/octet-stream" -F "@dist/${FILE}" "${RELEASE_URL}?name=${FILE}"
+  curl -v -X POST -H "${ACCEPT_HEADER}" -H "${TOKEN_HEADER}" -H "Content-Type: application/octet-stream" --data-binary "@dist/${FILE}" "${RELEASE_URL}?name=${FILE}"
 done
