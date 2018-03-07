@@ -1,5 +1,4 @@
 <!-- This document generated automatically -->
-## Update project configuration.
 
 ### Update configuration
 

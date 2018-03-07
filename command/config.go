@@ -8,10 +8,6 @@ import (
 )
 
 // Config is a struct for update project configuration.
-//
-// >>> doc
-// ## Update project configuration.
-// <<< doc
 type Config struct {
 	Command
 	log *logger.Logger
