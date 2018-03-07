@@ -83,5 +83,5 @@ func (c *Config) ChooseFunction() string {
 	if len(choose) == 0 {
 		return ""
 	}
-	return input.Choice("Select target fucntion", choose)
+	return input.Choice("Select target function", choose)
 }

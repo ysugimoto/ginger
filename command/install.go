@@ -60,7 +60,7 @@ func (i *Install) Run(ctx *args.Context) {
 
 	// Recursive copy
 	if err := i.movePackages(tmpDir, c.LibPath); err != nil {
-		i.log.Error(err.Error)
+		i.log.Error(err.Error())
 	}
 }
 
@@ -76,13 +76,13 @@ func (i *Install) installDependencies(pkg, tmpDir string, wg *sync.WaitGroup) {
 func (i *Install) movePackages(src, dest string) error {
 	items, err := ioutil.ReadDir(src)
 	if err != nil {
-		return exception("Failed to read directort: %s", src)
+		return exception("Failed to read directory: %s", src)
 	}
 	for _, item := range items {
 		from := filepath.Join(src, item.Name())
 		to := filepath.Join(dest, item.Name())
 		if err := os.Rename(from, to); err != nil {
-			return exception("Failed to move file: %s => %s", from, to)
+			return exception("Failed to move file: %s => %s, %s", from, to, err.Error())
 		}
 	}
 	return nil

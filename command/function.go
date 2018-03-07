@@ -138,6 +138,16 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 		return exception("Memory size must be multiple of 64.")
 	}
 
+	event := ctx.String("event")
+	if event == "" {
+		event = input.Choice("What service will you handle?", []string{
+			"(None)",
+			"API Gateway",
+			"S3",
+			"CloudWatch Event",
+		})
+	}
+
 	fn := &entity.Function{
 		Name:       name,
 		MemorySize: int64(m),
@@ -150,7 +160,7 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	}
 	if err := ioutil.WriteFile(
 		filepath.Join(c.FunctionPath, name, "main.go"),
-		f.buildTemplate(name, ctx.String("event")),
+		f.buildTemplate(name, event),
 		0644,
 	); err != nil {
 		return exception("Create function error: %s", err.Error())
@@ -167,7 +177,7 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 	binds := []interface{}{}
 
 	switch eventSource {
-	case "apigateway":
+	case "API Gateway":
 		binds = append(binds,
 			"\n\t\"github.com/aws/aws-lambda-go/events\"",
 			strcase.ToCamel(name),
@@ -180,11 +190,20 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 	}, nil`,
 			strcase.ToCamel(name),
 		)
-	case "s3":
+	case "S3":
 		binds = append(binds,
 			"\n\t\"github.com/aws/aws-lambda-go/events\"",
 			strcase.ToCamel(name),
 			"s3Event events.S3Event",
+			"error",
+			"nil",
+			strcase.ToCamel(name),
+		)
+	case "CloudWatch Event":
+		binds = append(binds,
+			"\n\t\"github.com/aws/aws-lambda-go/events\"",
+			strcase.ToCamel(name),
+			"cloudWatchEvent events.CloudWatchEvent",
 			"error",
 			"nil",
 			strcase.ToCamel(name),
@@ -338,7 +357,7 @@ func (f *Function) logFunction(c *config.Config, ctx *args.Context) error {
 
 	f.log.Warnf("Tailing cloudwatch logs for function \"%s\"...\n", name)
 	ctc, cancel := context.WithCancel(context.Background())
-	cwl := request.NewCloudWatchLogsRequest(c)
+	cwl := request.NewCloudWatch(c)
 	go cwl.TailLogs(
 		ctc,
 		fmt.Sprintf("/aws/lambda/%s", name),
