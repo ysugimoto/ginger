@@ -19,10 +19,12 @@ import (
 
 const lambdaRoleInquiry = `[Need lambda execution role]
 If you will use Lambda function, Need to set "LambdaExecutionRole".
-This is because lambda requires permission to run function itself or external service.`
+This is because lambda requires permission to run function itself or external service.
+`
 
 const s3BucketInquiry = `[S3 bucket name]
-If you will use S3 storage for static file serve, We recommend to set 'S3BucketName'.`
+If you will use S3 storage for static file serve, We recommend to set 'S3BucketName'.
+`
 
 // Init is the struct for initalize ginger project.
 // This command generates config file and some

@@ -482,7 +482,7 @@ func (f *Function) mountFunction(c *config.Config, ctx *args.Context) error {
 //
 // >>> doc
 //
-// ## Mount function
+// ## Unmount function
 //
 // Delete function integration to destination resource.
 //

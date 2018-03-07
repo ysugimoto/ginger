@@ -28,7 +28,8 @@ Rate exression: "rate(1 hour)" executes every hour.
 Note that the CloudWatchEvents schedules time as UTC, so you need to consider your timezone.
 For example, if you want to run 10:00 am (JST), cron becomes "cron(0, 1, * * ? *)" (-9 hours).
 
-See in detail: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html`
+See in detail: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+`
 
 const (
 	SCHEDULER_CREATE = "create"
@@ -36,6 +37,7 @@ const (
 	SCHEDULER_DEPLOY = "deploy"
 	SCHEDULER_LIST   = "list"
 	SCHEDULER_ATTACH = "attach"
+	SCHEDULER_DETACH = "detach"
 	SCHEDULER_HELP   = "help"
 )
 
@@ -55,7 +57,7 @@ func NewScheduler() *Scheduler {
 // Show function command help.
 func (s *Scheduler) Help() string {
 	return COMMAND_HEADER + `
-schedule - (AWS CloudWatchEvents) management command.
+scheduler - (AWS CloudWatchEvents) management command.
 
 Usage:
   $ ginger scheduler|sc [operation] [options]
@@ -65,6 +67,7 @@ Operation:
   delete : Delete scheduler
   deploy : Deploy scheduler
   attach : Attach scheduler to function
+  detach : Detach scheduler to function
   list   : List schedulers
   help   : Show this help
 
@@ -113,7 +116,26 @@ func (s *Scheduler) writeConfig(c *config.Config, sc *entity.Scheduler) error {
 	return enc.Encode(sc)
 }
 
-// createScheduler creates new scheduler.
+// createScheduler creates new scheduler in local.
+//
+// >>> doc
+//
+// ## Create new scheduler
+//
+// Create new cloudwatch scheduler .
+//
+// ```
+// $ ginger scheduler create [options]
+// ```
+//
+// | option  | description                                                                                              |
+// |:-------:|:--------------------------------------------------------------------------------------------------------:|
+// | --name  | Function name. If this option isn't supplied, ginger will ask it                                         |
+//
+// After defined name, ginger want to input `expression`, you need to input CloudWatchEvent expression.
+// see: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+//
+// <<< doc
 func (s *Scheduler) createScheduler(c *config.Config, ctx *args.Context) (err error) {
 	name := ctx.String("name")
 	if name == "" {
@@ -143,7 +165,24 @@ func (s *Scheduler) createScheduler(c *config.Config, ctx *args.Context) (err er
 	return nil
 }
 
-// deleteScheduler deletes stage.
+// deleteScheduler deletes scheduler.
+// If schedule has been deployed on AWS CloudWatchEvent, also delete it.
+//
+// >>> doc
+//
+// ## Delete scheduler
+//
+// Delete CloudWatchEvent scheduler.
+//
+// ```
+// $ ginger scheduler delete [options]
+// ```
+//
+// | option  | description               |
+// |:-------:|:-------------------------:|
+// | --name  | [Required] scheduler name |
+//
+// <<< doc
 func (s *Scheduler) deleteScheduler(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
@@ -172,7 +211,19 @@ func (s *Scheduler) deleteScheduler(c *config.Config, ctx *args.Context) error {
 	return nil
 }
 
-// listScheduler shows registered stages.
+// listScheduler shows registered schedulers.
+//
+// >>> doc
+//
+// ## List schedulers
+//
+// List registered schedulers.
+//
+// ```
+// $ ginger scheduler list
+// ```
+//
+// <<< doc
 func (s *Scheduler) listScheduler(c *config.Config, ctx *args.Context) error {
 	scs, _ := c.LoadAllSchedulers()
 	t, err := tty.Open()
@@ -208,6 +259,25 @@ func (s *Scheduler) listScheduler(c *config.Config, ctx *args.Context) error {
 	return nil
 }
 
+// attachScheduler attaches scheduler rsource to Lambda function.
+//
+// >>> doc
+//
+// ## Attach scheduler to Lambda function
+//
+// Relates scheduler to Lambda function.
+//
+// ```
+// $ ginger scheduler attach [options]
+// ```
+//
+// | option  | description                                                                                              |
+// |:-------:|:--------------------------------------------------------------------------------------------------------:|
+// | --name  | Scheduler name. If this option isn't supplied, ginger will ask it                                        |
+//
+// Ginger will ask attach target function name by list UI.
+//
+// <<< doc
 func (s *Scheduler) attachScheduler(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {

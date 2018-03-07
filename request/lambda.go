@@ -180,7 +180,7 @@ func (l *LambdaRequest) AddS3Permission(name, bucketName string) error {
 		return err
 	}
 	debugRequest(result)
-	l.log.Info("Permission added successfully.")
+	l.log.Info("Permission added successfully")
 	return nil
 }
 
@@ -200,7 +200,7 @@ func (l *LambdaRequest) AddAPIGatewayPermission(name, apiArn string) error {
 		return err
 	}
 	debugRequest(result)
-	l.log.Info("Permission added successfully.")
+	l.log.Info("Permission added successfully")
 	return nil
 }
 
@@ -220,7 +220,7 @@ func (l *LambdaRequest) AddCloudWatchPermission(name, eventArn string) error {
 		return err
 	}
 	debugRequest(result)
-	l.log.Info("Permission added successfully.")
+	l.log.Info("Permission added successfully")
 	return nil
 }
 

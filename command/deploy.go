@@ -94,6 +94,8 @@ func (d *Deploy) Run(ctx *args.Context) {
 		if err != nil {
 			d.log.Error(err.Error())
 			debugTrace(err)
+		} else {
+			d.log.Info("Deployment finished.")
 		}
 		c.SortResources()
 		c.Write()
@@ -279,11 +281,12 @@ func (d *Deploy) deploySchedulers(c *config.Config, ctx *args.Context) error {
 		if err != nil {
 			return nil
 		}
-		if arn == "" {
-			arn, err = cw.CreateSchedule(sc)
-			if err != nil {
-				return nil
-			}
+		arn, err = cw.CreateOrUpdateSchedule(sc)
+		if err != nil {
+			return nil
+		}
+		if sc.Functions == nil {
+			continue
 		}
 		for _, name := range sc.Functions {
 			fn, err := lambda.GetFunction(name)
