@@ -7,7 +7,7 @@ build: assets
 
 publish:
 	GOOS=darwin GOARCH=amd64 go build -o dist/ginger-${CIRCLE_TAG}-osx
-	GOOS=darwin GOARCH=amd64 go build -o dist/ginger-${CIRCLE_TAG}-linux
+	GOOS=linux GOARCH=amd64 go build -o dist/ginger-${CIRCLE_TAG}-linux
 	sh ./_tools/github-release.sh
 
 assets:
