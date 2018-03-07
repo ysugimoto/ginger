@@ -5,7 +5,7 @@ build: assets
 		-ldflags "-X github.com/ysugimoto/ginger/request.debug=enable -X github.com/ysugimoto/ginger/command.debug=enable" \
 		-o dist/ginger
 
-pubish:
+publish:
 	GOOS=darwin GOARCH=amd64 go build -o dist/ginger-${CIRCLE_TAG}-osx
 	GOOS=darwin GOARCH=amd64 go build -o dist/ginger-${CIRCLE_TAG}-linux
 	sh ./_tools/github-release.sh
