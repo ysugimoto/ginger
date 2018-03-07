@@ -67,7 +67,7 @@ func (c *Config) ChooseScheduler() string {
 	filepath.Walk(c.SchedulerPath, func(path string, info os.FileInfo, e error) error {
 		if e != nil {
 			return e
-		} else if !info.IsDir() {
+		} else if info.IsDir() {
 			return nil
 		} else if path == c.SchedulerPath {
 			return nil

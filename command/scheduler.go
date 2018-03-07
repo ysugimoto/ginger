@@ -227,7 +227,7 @@ func (s *Scheduler) attachScheduler(c *config.Config, ctx *args.Context) error {
 	}
 
 	if sc.Functions == nil {
-		sc.Functions = make([]string, 1)
+		sc.Functions = make([]string, 0)
 	}
 	sc.Functions = append(sc.Functions, fname)
 	if err := s.writeConfig(c, sc); err != nil {

@@ -44,8 +44,8 @@
     "service/s3",
     "service/sts"
   ]
-  revision = "aace5875a5c3b85a3902c6d72b9caed301d64cce"
-  version = "v1.13.8"
+  revision = "a580f1a44c64e950056e5151797c35c65ab3cb4b"
+  version = "v1.13.9"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -116,7 +116,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "f6cff0780e542efa0c8e864dc8fa522808f6a598"
+  revision = "dd2ff4accc098aceecb86b36eaa7829b2a17b1c9"
 
 [solve-meta]
   analyzer-name = "dep"
