@@ -25,6 +25,8 @@ const (
 	DEPLOY_RESOURCE = "resource"
 	DEPLOY_R        = "r"
 	DEPLOY_STORAGE  = "storage"
+	DEPLOY_SCHEDULE = "schedule"
+	DEPLOY_S        = "s"
 	DEPLOY_ALL      = "all"
 	DEPLOY_HELP     = "help"
 )
@@ -54,6 +56,7 @@ Subcommand:
   function : Deploy functions (default: all, one of function if --name option supplied)
   resource : Deploy resources (default: all, one of path if --name option supplied)
   storage  : Deploy storage
+  schedule : Deploy schedulers
   all      : Deploy both of functions and apis
   help     : Show this help
 
@@ -107,6 +110,11 @@ func (d *Deploy) Run(ctx *args.Context) {
 			return
 		}
 		err = d.deployResource(c, ctx)
+	case DEPLOY_SCHEDULE, DEPLOY_S:
+		if err = d.runHook(c); err != nil {
+			return
+		}
+		err = d.deploySchedulers(c, ctx)
 	case DEPLOY_STORAGE:
 		if err = d.runHook(c); err != nil {
 			return
@@ -122,6 +130,10 @@ func (d *Deploy) Run(ctx *args.Context) {
 		}
 		d.log.Print("========== Storage Deployment ==========")
 		if err = d.deployStorage(c, ctx); err != nil {
+			return
+		}
+		d.log.Print("========== Scheduler Deployment ==========")
+		if err = d.deploySchedulers(c, ctx); err != nil {
 			return
 		}
 		d.log.Print("========== Resource Deployment ==========")
@@ -183,6 +195,7 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 	d.log.AddNamespace("function")
 	defer d.log.RemoveNamespace("function")
 	targets := []*entity.Function{}
+
 	if name := ctx.String("name"); name != "" {
 		fn, err := c.LoadFunction(name)
 		if err != nil {
@@ -195,6 +208,11 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 		if err != nil {
 			return exception("Failed to list functions: %s", err.Error())
 		}
+	}
+
+	if len(targets) == 0 {
+		d.log.Warn("No functions found. Skip to deploy to Lambda.")
+		return nil
 	}
 
 	buildDir, err := ioutil.TempDir("", "ginger-builds")
@@ -245,6 +263,44 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 	return nil
 }
 
+func (d *Deploy) deploySchedulers(c *config.Config, ctx *args.Context) error {
+	cw := request.NewCloudWatch(c)
+	lambda := request.NewLambda(c)
+
+	scs, err := c.LoadAllSchedulers()
+	if err != nil {
+		return exception("Failed to get all schedulers: %s", err.Error())
+	} else if len(scs) == 0 {
+		d.log.Warn("No schedules found. Skip to deploy CloudWatch.")
+		return nil
+	}
+	for _, sc := range scs {
+		arn, err := cw.GetScheduleArn(sc.Name)
+		if err != nil {
+			return nil
+		}
+		if arn == "" {
+			arn, err = cw.CreateSchedule(sc)
+			if err != nil {
+				return nil
+			}
+		}
+		for _, name := range sc.Functions {
+			fn, err := lambda.GetFunction(name)
+			if err != nil {
+				return nil
+			}
+			if err := lambda.AddCloudWatchPermission(*fn.FunctionName, arn); err != nil {
+				return nil
+			}
+			if err = cw.PutTarget(sc.Name, fn.FunctionArn); err != nil {
+				return nil
+			}
+		}
+	}
+	return nil
+}
+
 // archive archives built application binary to zip.
 func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
 	buf := new(bytes.Buffer)
@@ -289,6 +345,10 @@ func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
 //
 // <<< doc
 func (d *Deploy) deployResource(c *config.Config, ctx *args.Context) (err error) {
+	if len(c.Resources) == 0 {
+		d.log.Warn("No resources found. Skip to deploy APIGateway.")
+		return nil
+	}
 	d.log.AddNamespace("resource")
 	defer d.log.RemoveNamespace("resource")
 	api := request.NewAPIGateway(c)
@@ -360,7 +420,8 @@ func (d *Deploy) deployStorage(c *config.Config, ctx *args.Context) error {
 	if err != nil {
 		return exception("Failed to list local storage files: %s", err.Error())
 	} else if len(locals) == 0 {
-		return exception("Any local files didn't find, abort.")
+		d.log.Warn("No files found. Skip to deoloy S3.")
+		return nil
 	}
 
 	d.log.Warn("Deploying storage local -> S3...")

@@ -108,6 +108,10 @@ func (i *Init) Run(ctx *args.Context) {
 		i.log.Printf("Create stages directory: %s\n", c.StagePath)
 		os.Mkdir(c.StagePath, 0755)
 	}
+	if _, err := os.Stat(c.SchedulerPath); err != nil {
+		i.log.Printf("Create scheduler directory: %s\n", c.SchedulerPath)
+		os.Mkdir(c.SchedulerPath, 0755)
+	}
 
 	c.ProjectName = filepath.Base(c.Root)
 	c.Profile = ""

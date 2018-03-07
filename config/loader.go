@@ -18,15 +18,16 @@ func Load() *Config {
 	root := findUp()
 
 	c := &Config{
-		Root:         root,
-		Path:         filepath.Join(root, "Ginger.toml"),
-		FunctionPath: filepath.Join(root, "functions"),
-		StoragePath:  filepath.Join(root, "storage"),
-		LibPath:      filepath.Join(root, ".ginger"),
-		StagePath:    filepath.Join(root, "stages"),
-		Resources:    make([]*entity.Resource, 0),
-		Queue:        make(map[string]*entity.Function, 0),
-		log:          logger.WithNamespace("ginger.config"),
+		Root:          root,
+		Path:          filepath.Join(root, "Ginger.toml"),
+		FunctionPath:  filepath.Join(root, "functions"),
+		StoragePath:   filepath.Join(root, "storage"),
+		LibPath:       filepath.Join(root, ".ginger"),
+		StagePath:     filepath.Join(root, "stages"),
+		SchedulerPath: filepath.Join(root, "schedulers"),
+		Resources:     make([]*entity.Resource, 0),
+		Queue:         make(map[string]*entity.Function, 0),
+		log:           logger.WithNamespace("ginger.config"),
 	}
 
 	if _, err := os.Stat(c.Path); err == nil {
