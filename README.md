@@ -1,6 +1,6 @@
 # ginger - Serverless framework for Go runtime
 
-`ginger` is the framework that manages `Serverless` architecture for Go runtime.
+`ginger` is the framework manages `Serverless` architecture for Go runtime.
 
 ## Features
 
@@ -8,13 +8,13 @@
 
 - `API Gateway` endpoints
 - `S3` storage files
-- `Cloudwatch` schedule events and Lmabda logger
+- `Cloudwatch` schedule events and Lambda function logger
 - `Lambda` __only for `go1.x` runtime__
 
 ## Requirements
 
-- Go (recommend latest version)
-- AWS user who has some roles
+- Go (we recommend latest version)
+- AWS user who has above resource permissions
 
 ## Installation
 
@@ -36,7 +36,7 @@ ginger init
 >>> some output...
 ```
 
-If you want to use (probably almost case yes) external Go package, we suggest you put project directory under the `$GOPATH/src` to enable to detect vendor tree.
+If you want to use (probably almost case yes) external Go package, we suggest you should put project directory under the `$GOPATH/src` to enable to detect vendor tree.
 
 For example:
 
