@@ -1,13 +1,15 @@
-# ginger - A Serverless framework for Go runtime
+# ginger - Serverless framework for Go runtime
 
-`ginger` is the framework that manages `AWS API Gateway` resources and `AWS Lambda` functions written in `go1.x` runtime.
-It can creates `Serverless` architecture on `AWS` platform.
+`ginger` is the framework that manages `Serverless` architecture for Go runtime.
 
 ## Features
 
-- Create / Delete `API Gateway` resources
-- Create / Update / Delete `AWS Lambda` functions which works on `go1.x` runtime.
-- Easily to make integration between `API Gateway` and `AWS Lambda` on __Lambda Proxy Integration__.
+`ginger` manages following AWS services:
+
+- `API Gateway` endpoints
+- `S3` storage files
+- `Cloudwatch` schedule events and Lmabda logger
+- `Lambda` __only for `go1.x` runtime__
 
 ## Requirements
 
@@ -16,18 +18,16 @@ It can creates `Serverless` architecture on `AWS` platform.
 
 ## Installation
 
-[url put here]
-
-Move binary file to your `$PATH` directory e.g. `/usr/local/bin`.
+You can download prebuilt binary at [Release](https://github.com/ysugimoto/ginger/releases).
+But although you need to install `Go` for compile Lambda function.
 
 To see a general usage, run `ginger help` command.
 
 ## Getting Started
 
-
 ### Setup
 
-At the first, run the `ginger init` command at your project directory:
+Run the `ginger init` command at your project directory:
 
 
 ```
@@ -46,32 +46,7 @@ cd $HOME/go/src/ginger-project
 ginger init
 ```
 
-The `ginger init` command will work as following:
-
-- Create `Ginger.toml`. It is a project configuration file
-- Create `functions` directory. It is a function management directory
-- Create `vendor` directory. It is a dependency vendor tree which will be loaded from go runtime.
-- Install dependency packages.
-
-### Project configuration
-
-The `ginger` has three of project configurations. default values are deifned as following tables:
-
-| Configuration Name  | Default Value | Description                                                                           |
-|:-------------------:|:-------------:|:--------------------------------------------------------------------------------------|
-| Profile             | (empty)       | Profile name which is used on AWS Request. If empty, ginger uses environment variable |
-| Region              | us-east-1     | AWS region which project uses                                                         |
-| LambdaExecutionRole | (empty)       | Set the AWS Lambda execution role                                                     |
-
-Above configurations can change through a `config` subcommand:
-
-```
-ginger config --profile [Profile] --region [Region] --role [LambdaExecutionRole]`
-```
-
-Note that the `LambdaExecutionRole` is necessary to execute lambda function. Please make sure this value is set and that role is valid to execute Lambda function.
-
-And once you deployed some functions or apis, you __should not__ change the region because when region is changed, function will be created on different regions as same name.
+`ginger` wants to input `Lambda execution role` and `S3 storage name`, you should input suitable value.
 
 ### Create function
 
@@ -83,7 +58,9 @@ To create new function, run the `ginger fucntion create --name [function name]` 
 ginger function create --name example
 ```
 
-You can find a `functions/example` directory which contains `main.go`. The `main.go` is a lambda function handler. The `github.com/aws/aws-lambda-go/lambda` is installed as default.
+You can find a `functions/example` directory which contains `main.go` and `Function.toml`.
+The `main.go` is a Lambda function handler. The `github.com/aws/aws-lambda-go/lambda` is installed as default.
+On the other hand, the `Function.toml` is setting file of Lambda function e.g. memory limit, timeout, and so on.
 
 Of course you can install additional package with `go get` or other verndoring tools like `glide`, `dep`, ...
 
@@ -97,32 +74,13 @@ After you modified a function, run `ginger deploy function` command to deploy to
 ginger deploy function (--name [destination function])
 ```
 
-Command compiles function automatically, and archive to `zip`, and send to `AWS` to create on destination region.
+`ginger` compiles function automatically and archive to `zip`, finally send to `AWS` to create on destination region.
 
 Or `ginger function deploy` is alias of this command, so you can also use it to deploy function.
 
-### Modify function
-
-A Lambda function has a couple of settings:
-
-| Name       | Default Value | Description                                                                       |
-|:----------:|:-------------:|:----------------------------------------------------------------------------------|
-| MemorySize | 128 (MB)      | Function memory size. this value must be above `128`, and must be multiple of 64. |
-| Timeout    | 3 (Sec)       | Function timeout duration second.                                                 |
-
-In detail, see the [aws lambda documentation](https://docs.aws.amazon.com/lambda/latest/dg/limits.html)
-
-To modify those values, run the `ginger function config` command with following options:
-
-```
-ginger function config --name [fucntion name] --memory [memory size] --timeout [timeout]
-```
-
-After that, the function configuration has been updated on your local, so you need to deploy to reflect those values.
-
 ### Invoke function
 
-Once you deployed function to `AWS` by `ginger deploy function` command, you can invoke the function via `AWS Lambda`:
+Once you deployed function to `AWS`, you can invoke the function via `AWS Lambda`:
 
 ```
 ginger function invoke --name [function name] --event [event source json]
@@ -144,22 +102,22 @@ ginger function help
 
 ### Create Resource Endpoint
 
-To create API endpoint, run the `ginger api create --path [endpoint path]` command.
+To create API endpoint, run the `ginger resource create --path [endpoint path]` command.
 
 `ginger` creates endpoint on `Ginger.toml`.
 
 ```
-ginger api create --path /foo/bar
+ginger resource create --path /foo/bar
 ```
 
-Note that `ginger api create` creates endpoint info only on your local. To work on `AWS API Gateway`, you need to `deploy api`.
+Note that `ginger resource create` creates endpoint info only on your local. To work on `AWS API Gateway`, you need to `deploy api`.
 
 ### Deploy api
 
-After you created endpoint, run `ginger deploy api` command to deploy to the `AWS API Gateway`.
+After you created endpoint, run `ginger deploy resource` command to deploy to the `AWS API Gateway`.
 
 ```
-ginger deploy api --stage [target stage] (--path [destination path])
+ginger deploy resource --stage [target stage] (--path [destination path])
 ```
 
 Command creates resouce which we need, and also create root `REST API` if you haven't create it.
@@ -171,30 +129,38 @@ But you don't need to care about it because `ginger` creates and manages sub-pat
 
 In detail, see [AWS API Gateway documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-method-settings-method-request.html).
 
-Or `ginger api deploy` is alias of this command, so you can also use it to deploy api.
+Or `ginger resource deploy` is alias of this command, so you can also use it to deploy resources.
 
 ### Setup Lambda Integration
 
 The `AWS API Gateway` supports [Lambda Proxy Integration](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-api-as-simple-proxy-for-lambda.html), and `ginger` can manage its feature.
 
-To set up it, run `ginger api link` command with function name and endpoint option:
+To set up it, run `ginger function mount` command with function name and endpoint option:
 
 ```
-ginger api link --name [function name] --path [endpoint path]
+ginger function mount
 ```
 
-Then, function and endpoint are linked. After that, when you deploy api to AWS, proxy integration creates automatically.
+Then, `ginger` asks target function and endpoint by choosing list. After select both and deploy api to AWS, proxy integration creates automatically.
+Let's access to API Gateway URL!
 
-### Invoke Resource
+### Invoke endpoint
 
-After you deployed some ednpoints with Lambda integration, you can invoke api endpoint via `ginger api invoke`:
+In default, the `API Gateway` endpoint is complicated a little. So you can invoke HTTP request through `ginger resource invoke` command.
 
 ```
-ginger api invoke --path [endpoint path]
+ginger resource invoke
 ```
 
-`ginger` makes `API Gateway` endpoint URL and send HTTP request to it. You can see a response in your terminal.
+`ginger` asks some input, and make request URI and send HTTP request, and finally outputs response headers, and body.
 
+## API Doc
+
+See [Command API document](https://github.com/ysugimoto/ginger/blob/master/docs/command.md)
+
+## Examples
+
+Now writing...
 
 ## License
 
