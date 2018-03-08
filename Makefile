@@ -1,4 +1,4 @@
-.PHONY: all assets
+.PHONY: all assets docs
 
 build: assets
 	go build \
@@ -12,3 +12,6 @@ publish:
 
 assets:
 	go-bindata -o assets/assets.go --pkg assets --prefix misc ./misc
+
+docs:
+	go run ./_tools/generate-doc.go
