@@ -33,14 +33,14 @@ Usage:
   $ ginger [subcommand] [options]
 
 SubCommands:
-  init     : Initialize project
-  install  : Install ginger dependencies
-  config   : Update project configurations
-  function : Manage Go runtime Lambda functions
-  resource : Manage APIGateway resources
-  stage    : Manage APIGateway stages
-  deploy   : Deploy function or api resource
-  log      : Tail function log
+  init      : Initialize project
+  install   : Install ginger dependencies
+  config    : Update project configurations
+  function  : Manage Go runtime Lambda functions
+  scheduler : Manage CloudWatchEvent scheduler
+  resource  : Manage APIGateway resources
+  stage     : Manage APIGateway stages
+  deploy    : Deploy function or api resource
 
 Options:
   -h, --help: Show help
