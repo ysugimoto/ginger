@@ -1,5 +1,0 @@
-[[ginger.function]]
-name = "example"
-
-[ginger.function.api_gateway]
-Path = "/"
