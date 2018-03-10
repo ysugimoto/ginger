@@ -32,9 +32,8 @@ func newBuilder(src, dest, libPath string) *builder {
 }
 
 // build builds go application by each functions
-func (b *builder) build(targets []*entity.Function) map[*entity.Function]string {
+func (b *builder) build(targets []*entity.Function) {
 	log := logger.WithNamespace("ginger.build")
-	binaries := make(map[*entity.Function]string)
 
 	// Parallel build by each functions
 	index := 0
@@ -46,28 +45,26 @@ func (b *builder) build(targets []*entity.Function) map[*entity.Function]string 
 			end = index + 5
 		}
 		var wg sync.WaitGroup
-		var mu sync.Mutex
+		// var mu sync.Mutex
 		for _, fn := range targets[index:end] {
 			wg.Add(1)
 			log.Printf("Building function: %s...\n", fn.Name)
-			bin := make(chan string)
+			success := make(chan struct{})
 			err := make(chan error)
-			go b.compile(fn.Name, bin, err)
+			go b.compile(fn.Name, success, err)
 			go func() {
 				defer func() {
 					wg.Done()
-					close(bin)
+					close(success)
 					close(err)
 				}()
 				select {
 				case e := <-err:
 					log.Errorf("Failed to build function: %s\n", e.Error())
 					return
-				case binary := <-bin:
-					log.Infof("Function built successfully: %s:%s\n", fn.Name, binary)
-					mu.Lock()
-					binaries[fn] = binary
-					mu.Unlock()
+				case <-success:
+					log.Infof("Function %s built successfully\n", fn.Name)
+					return
 				}
 			}()
 		}
@@ -77,12 +74,11 @@ func (b *builder) build(targets []*entity.Function) map[*entity.Function]string 
 		}
 		index += parallelBuildNum
 	}
-	return binaries
 }
 
 // compile compiles go application by `go build` command.
 // Note that runtime in AWS Lambda is linux, so we have to build as linux amd64 target.
-func (b *builder) compile(name string, binChan chan string, errChan chan error) {
+func (b *builder) compile(name string, successChan chan struct{}, errChan chan error) {
 	buffer := new(bytes.Buffer)
 	out := filepath.Join(b.dest, name)
 	src := filepath.Join(b.src, name)
@@ -105,6 +101,6 @@ func (b *builder) compile(name string, binChan chan string, errChan chan error) 
 	if err := cmd.Run(); err != nil {
 		errChan <- errors.New(string(buffer.Bytes()))
 	} else {
-		binChan <- out
+		successChan <- struct{}{}
 	}
 }

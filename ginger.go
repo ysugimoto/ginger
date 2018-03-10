@@ -20,6 +20,8 @@ func main() {
 		Alias("hook", "", "").
 		Alias("path", "p", "").
 		Alias("method", "m", "").
+		Alias("memory", "", 128).
+		Alias("timeout", "", 3).
 		Alias("body", "b", "").
 		Alias("stage", "s", "").
 		Alias("event", "e", "").
