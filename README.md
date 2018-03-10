@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/ysugimoto/ginger/tree/master.svg?style=svg)](https://circleci.com/gh/ysugimoto/ginger/tree/master)
+[![CircleCI](https://circleci.com/gh/ysugimoto/ginger.svg?style=svg)](https://circleci.com/gh/ysugimoto/ginger)
 
 # ginger - Serverless framework for Go runtime
 
