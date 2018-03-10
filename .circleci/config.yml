@@ -40,7 +40,7 @@ definitions:
         - setup_remote_docker
         - run:
            command: |
-             sudo apt-get install jq
+             sudo apt-get install jq file
              cd /go/src/github.com/ysugimoto/ginger
              make publish
 
