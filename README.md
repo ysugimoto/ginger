@@ -162,6 +162,22 @@ See [Command API document](https://github.com/ysugimoto/ginger/blob/master/docs/
 
 Now writing...
 
+## Development
+
+Checkout this project and build locally:
+
+```
+cd $GOPATH
+go get github.com/ysugimoto/ginger
+cd src/github.com/ysugimoto/ginger
+make
+```
+
+On `make` command builds with `debug flag`. This flag dumps stacktrace on error and all AWS SDK requests and responses.
+It will help you how command processed.
+
+We welcome your feedbacks and PRs :-)
+
 ## License
 
 MIT

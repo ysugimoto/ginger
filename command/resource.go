@@ -160,6 +160,10 @@ func (r *Resource) deleteEndpoint(c *config.Config, ctx *args.Context) error {
 // invokeEndpoint invokes resource with HTTP request.
 // Ensure some lambda fucntion integartion has set to handle request. Otherwise request will be failed.
 func (r *Resource) invokeEndpoint(c *config.Config, ctx *args.Context) error {
+	stage := ctx.String("stage")
+	if stage == "" {
+		return exception("Stage couldn't find. please run with --stage [stage name] option.")
+	}
 	path := ctx.String("path")
 	if path == "" {
 		path = input.String("Type invoke path")
@@ -168,7 +172,6 @@ func (r *Resource) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 		path = "/"
 	}
 
-	stage := ctx.String("stage")
 	// Build request
 	host := fmt.Sprintf("%s.execute-api.%s.amazonaws.com", c.RestApiId, c.Region)
 	callUrl := fmt.Sprintf("https://%s/%s%s", host, stage, path)
@@ -178,7 +181,7 @@ func (r *Resource) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 		method = strings.ToUpper(m)
 	}
 
-	r.log.Printf("Send HTTP request to %s\n", callUrl)
+	r.log.Printf("Send HTTP request to %s %s\n", method, callUrl)
 	req, err := http.NewRequest(method, callUrl, strings.NewReader(ctx.String("body")))
 	if err != nil {
 		return exception("Failed to create HTTP request: %s\n", err.Error())
