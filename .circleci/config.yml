@@ -41,10 +41,6 @@ definitions:
         - run:
            command: |
              sudo apt-get install jq
-             sudo apt-get install python-setuptools
-             sudo apt-get install python-pip
-             sudo pip install awscli
-             export PATH=$PATH:/usr/local/bin
              cd /go/src/github.com/ysugimoto/ginger
              make publish
 
