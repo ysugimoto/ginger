@@ -7,19 +7,31 @@
 
 ### We strongly recommend that specify access token at external environement variable.
 
-### Your project repository
-REPOSITORY=":owner/:repo"
-
 ### Directory contains build artifacts if you have.
 ### If you don't have any artifacts, please keep it empty.
-ASSETS_DIR=""
+ASSETS_DIR="./dist"
+
+### Determine  project repository
+#REPOSITORY=":owner/:repo"
+
+### If you are using via some CI servcice, you can use following server specific variable.
+
+### In Circle CI:
+REPOSITORY="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
+
+### In Travis CI:
+#REPOSITORY="${TRAVIS_REPO_SLUG}"
 
 ### Determine release tag name
 TAG=
 
-### If you are using via some CI servcice, you can use following server specific variable:
-#TAG="${CIRCLE_TAG}" Circle CI
-#TAG="${TRAVIS_TAG}" Travis CI
+### If you are using via some CI servcice, you can use following server specific variable.
+
+### In Circle CI:
+#TAG="${CIRCLE_TAG}"
+
+### In Travis CI:
+#TAG="${TRAVIS_TAG}"
 
 
 ####### You don't need to modify following area #######
@@ -30,6 +42,12 @@ ENDPOINT="https://api.github.com/repos/${REPOSITORY}/releases"
 
 echo "Creatting new release as version ${TAG}..."
 RELEASE_ID=$(curl -H "${ACCEPT_HEADER}" -H "${TOKEN_HEADER}" -d "{\"tag_name\": \"${TAG}\", \"name\": \"${TAG}\"}" "${ENDPOINT}" | jq .id)
+
+if [ "${RELEASE_ID}" = "" ]; then
+  echo "Failed to create release. Please check your configuration."
+  exit 1
+fi
+
 RELEASE_URL="https://uploads.github.com/repos/${REPOSITORY}/releases/${RELEASE_ID}/assets"
 
 echo "Github release created as ID: ${RELEASE_ID}. https://github.com/${REPOSITORY}/release"
@@ -39,7 +57,7 @@ if [ "${ASSETS_DIR}" = "" ]; then
   exit
 fi
 
-for FILE in ${ASSETS_DIR}; do
+for FILE in ${ASSETS_DIR}/*; do
   MIME=$(file -b --mime-type "${ASSETS_DIR}/${FILE}")
   echo "Uploading assets ${ASSETS_DIR}/${FILE} as ${MIME}..."
   curl -v \
