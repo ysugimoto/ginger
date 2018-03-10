@@ -11,7 +11,7 @@
 - `API Gateway` endpoints
 - `S3` storage files
 - `Cloudwatch` schedule events and Lambda function logger
-- `Lambda` __only for `go1.x` runtime__
+- `Lambda` __for `go1.x` runtime__
 
 ## Requirements
 
