@@ -237,23 +237,26 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 
 	// Build functions
 	builder := newBuilder(c.FunctionPath, buildDir, c.LibPath)
-	binaries := builder.build(targets)
+	if err := builder.build(targets); err != nil {
+		return exception("Failed to build lambda function. %s", err.Error())
+	}
 
 	// Deploy to AWS
 	lambda := request.NewLambda(c)
-	for fn, binary := range binaries {
+	for _, fn := range targets {
+		// Check binary existence
+		binPath := filepath.Join(buildDir, fn.Name)
+		if _, err := os.Stat(binPath); err != nil {
+			d.log.Errorf("Build function binary not found for %s. skip it\n", fn.Name)
+			continue
+		}
 		if fn.Role == "" {
-			if c.DefaultLambdaRole == "" {
-
-			} else {
-				d.log.Warn("Lambda execution role is empty. ginger uses default lambda role on configuration...")
-				fn.Role = c.DefaultLambdaRole
-			}
+			fn.Role = c.DefaultLambdaRole
 		}
 		d.log.Printf("Archiving zip for %s...\n", fn.Name)
-		buffer, err := d.archive(fn, binary)
+		buffer, err := d.archive(fn, binPath)
 		if err != nil {
-			d.log.Errorf("Archive error for %s: %s", fn.Name, err.Error())
+			d.log.Errorf("Archive error for %s: %s\n", fn.Name, err.Error())
 			continue
 		}
 		d.log.Printf("Deploying function %s to AWS Lambda...\n", fn.Name)
