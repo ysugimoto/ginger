@@ -146,7 +146,7 @@ Let's access to API Gateway URL!
 
 ### Invoke endpoint
 
-In default, the `API Gateway` endpoint is complicated a little. So you can invoke HTTP request through `ginger resource invoke` command with `--stage` option to determine invoke stage
+In default, the `API Gateway` endpoint is complicated a little. So you can invoke HTTP request through `ginger resource invoke` command with `--stage` option to determine invoke stage.
 
 ```
 ginger resource invoke --stage [stage name]
