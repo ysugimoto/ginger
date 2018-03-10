@@ -1,8 +1,14 @@
 #!/bin/sh
 
 ### Github create release script
-### This script requires 'jq' command, so if you want to use this script, need to install:
-### sudo apt-get install jq or other platforms.
+### This script requires following UNIX commands:
+### - jq
+### - file
+### - curl
+### - basename
+### Those commands might not be installed on CI environment due to tiny OS package,
+### So probably you need to install manually.
+### For example, on Ubuntu: sudo apt-get install jq file curl
 
 ## Configuration for your project
 
@@ -45,31 +51,36 @@ TOKEN_HEADER="Authorization: token ${GITHUB_TOKEN}"
 ENDPOINT="https://api.github.com/repos/${REPOSITORY}/releases"
 
 echo "Creatting new release as version ${TAG}..."
-RELEASE_ID=$(curl -H "${ACCEPT_HEADER}" -H "${TOKEN_HEADER}" -d "{\"tag_name\": \"${TAG}\", \"name\": \"${TAG}\"}" "${ENDPOINT}" | jq .id)
+REPLY=$(curl -H "${ACCEPT_HEADER}" -H "${TOKEN_HEADER}" -d "{\"tag_name\": \"${TAG}\", \"name\": \"${TAG}\"}" "${ENDPOINT}")
 
-if [ ! "${RELEASE_ID}" ]; then
-  echo "Failed to create release. Please check your configuration."
+# Check error
+RELEASE_ID=$(echo "${REPLY}" | jq .id)
+if [ "${RELEASE_ID}" = "null" ]; then
+  echo "Failed to create release. Please check your configuration. Github replies:"
+  echo "${REPLY}"
   exit 1
 fi
 
+echo "Github release created as ID: ${RELEASE_ID}"
 RELEASE_URL="https://uploads.github.com/repos/${REPOSITORY}/releases/${RELEASE_ID}/assets"
 
-echo "Github release created as ID: ${RELEASE_ID}. https://github.com/${REPOSITORY}/releases"
-
+# If assets is empty, skip it.
 if [ "${ASSETS_DIR}" = "" ]; then
   echo "No upload assets, finished."
   exit
 fi
 
+# Uploads artifacts
 for FILE in ${ASSETS_DIR}/*; do
   MIME=$(file -b --mime-type "${FILE}")
   echo "Uploading assets ${FILE} as ${MIME}..."
+  NAME=$(basename "${FILE}")
   curl -v \
     -H "${ACCEPT_HEADER}" \
     -H "${TOKEN_HEADER}" \
     -H "Content-Type: ${MIME}" \
     --data-binary "@${FILE}" \
-    "${RELEASE_URL}?name=${FILE}"
+    "${RELEASE_URL}?name=${NAME}"
 done
 
 echo "Finished."
