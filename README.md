@@ -146,13 +146,13 @@ Let's access to API Gateway URL!
 
 ### Invoke endpoint
 
-In default, the `API Gateway` endpoint is complicated a little. So you can invoke HTTP request through `ginger resource invoke` command.
+In default, the `API Gateway` endpoint is complicated a little. So you can invoke HTTP request through `ginger resource invoke` command with `--stage` option to determine invoke stage.
 
 ```
-ginger resource invoke
+ginger resource invoke --stage [stage name]
 ```
 
-`ginger` asks some input, and make request URI and send HTTP request, and finally outputs response headers, and body.
+`ginger` asks path input, make request URI and send HTTP request, and outputs response headers and body.
 
 ## API Doc
 
@@ -161,6 +161,22 @@ See [Command API document](https://github.com/ysugimoto/ginger/blob/master/docs/
 ## Examples
 
 Now writing...
+
+## Development
+
+Checkout this project and build locally:
+
+```
+cd $GOPATH
+go get github.com/ysugimoto/ginger
+cd src/github.com/ysugimoto/ginger
+make
+```
+
+On `make` command builds with `debug flag`. This flag dumps stacktrace on error and all AWS SDK requests and responses.
+It will help you how command processed.
+
+We welcome your feedbacks and PRs :-)
 
 ## License
 
