@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/ysugimoto/ginger/tree/master.svg?style=svg)](https://circleci.com/gh/ysugimoto/ginger/tree/master)
+
 # ginger - Serverless framework for Go runtime
 
 `ginger` is the framework manages `Serverless` architecture for Go runtime.
