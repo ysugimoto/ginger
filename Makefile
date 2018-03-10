@@ -9,10 +9,10 @@ build: assets
 
 publish:
 	GOOS=darwin GOARCH=amd64 go build \
-			 -ldflags "-X github.com/ysugimoto/ginger/command.version=$(VERSION)"
+			 -ldflags "-X github.com/ysugimoto/ginger/command.version=$(VERSION)" \
 			 -o dist/ginger-${CIRCLE_TAG}-osx
 	GOOS=linux GOARCH=amd64 go build \
-			 -ldflags "-X github.com/ysugimoto/ginger/command.version=$(VERSION)"
+			 -ldflags "-X github.com/ysugimoto/ginger/command.version=$(VERSION)" \
 			 -o dist/ginger-${CIRCLE_TAG}-linux
 	sh ./_tools/github-release.sh
 
