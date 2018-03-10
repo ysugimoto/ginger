@@ -7,13 +7,15 @@ build: assets
 		-ldflags "-X github.com/ysugimoto/ginger/request.debug=enable -X github.com/ysugimoto/ginger/command.debug=enable" \
 		-o dist/ginger
 
-publish:
+build-release:
 	GOOS=darwin GOARCH=amd64 go build \
 			 -ldflags "-X github.com/ysugimoto/ginger/command.version=$(VERSION)" \
 			 -o dist/ginger-${CIRCLE_TAG}-osx
 	GOOS=linux GOARCH=amd64 go build \
 			 -ldflags "-X github.com/ysugimoto/ginger/command.version=$(VERSION)" \
 			 -o dist/ginger-${CIRCLE_TAG}-linux
+
+publish: build-release
 	sh ./_tools/github-release.sh
 
 assets:
