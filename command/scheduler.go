@@ -32,13 +32,13 @@ See in detail: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/Schedu
 `
 
 const (
-	SCHEDULER_CREATE = "create"
-	SCHEDULER_DELETE = "delete"
-	SCHEDULER_DEPLOY = "deploy"
-	SCHEDULER_LIST   = "list"
-	SCHEDULER_ATTACH = "attach"
-	SCHEDULER_DETACH = "detach"
-	SCHEDULER_HELP   = "help"
+	SCHEDULERCREATE = "create"
+	SCHEDULERDELETE = "delete"
+	SCHEDULERDEPLOY = "deploy"
+	SCHEDULERLIST   = "list"
+	SCHEDULERATTACH = "attach"
+	SCHEDULERDETACH = "detach"
+	SCHEDULERHELP   = "help"
 )
 
 // Schduler is the struct of AWS CloudWatchEvents management command.
@@ -56,7 +56,7 @@ func NewScheduler() *Scheduler {
 
 // Show function command help.
 func (s *Scheduler) Help() string {
-	return COMMAND_HEADER + `
+	return commandHeader() + `
 scheduler - (AWS CloudWatchEvents) management command.
 
 Usage:
@@ -93,15 +93,15 @@ func (s *Scheduler) Run(ctx *args.Context) {
 	}()
 
 	switch ctx.At(1) {
-	case SCHEDULER_CREATE:
+	case SCHEDULERCREATE:
 		err = s.createScheduler(c, ctx)
-	case SCHEDULER_DELETE:
+	case SCHEDULERDELETE:
 		err = s.deleteScheduler(c, ctx)
-	case SCHEDULER_DEPLOY:
+	case SCHEDULERDEPLOY:
 		err = NewDeploy().deploySchedulers(c, ctx)
-	case SCHEDULER_LIST:
+	case SCHEDULERLIST:
 		err = s.listScheduler(c, ctx)
-	case SCHEDULER_ATTACH:
+	case SCHEDULERATTACH:
 		err = s.attachScheduler(c, ctx)
 	default:
 		fmt.Println(s.Help())

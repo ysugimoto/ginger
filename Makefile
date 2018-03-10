@@ -1,13 +1,19 @@
 .PHONY: all assets docs
 
+VERSION=$(or ${CIRCLE_TAG}, ${BUILD_VERSION}, dev)
+
 build: assets
 	go build \
 		-ldflags "-X github.com/ysugimoto/ginger/request.debug=enable -X github.com/ysugimoto/ginger/command.debug=enable" \
 		-o dist/ginger
 
 publish:
-	GOOS=darwin GOARCH=amd64 go build -o dist/ginger-${CIRCLE_TAG}-osx
-	GOOS=linux GOARCH=amd64 go build -o dist/ginger-${CIRCLE_TAG}-linux
+	GOOS=darwin GOARCH=amd64 go build \
+			 -ldflags "-X github.com/ysugimoto/ginger/command.version=$(VERSION)"
+			 -o dist/ginger-${CIRCLE_TAG}-osx
+	GOOS=linux GOARCH=amd64 go build \
+			 -ldflags "-X github.com/ysugimoto/ginger/command.version=$(VERSION)"
+			 -o dist/ginger-${CIRCLE_TAG}-linux
 	sh ./_tools/github-release.sh
 
 assets:

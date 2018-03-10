@@ -13,7 +13,7 @@ import (
 	"github.com/ysugimoto/ginger/logger"
 )
 
-const PARALLEL_BUILD_NUM = 5
+const parallelBuildNum = 5
 
 // builder builds go application dynamically.
 // It's funny go application executes `go build` command :-)
@@ -40,7 +40,7 @@ func (b *builder) build(targets []*entity.Function) map[*entity.Function]string 
 	index := 0
 	for {
 		var end int
-		if len(targets) < index+PARALLEL_BUILD_NUM {
+		if len(targets) < index+parallelBuildNum {
 			end = len(targets)
 		} else {
 			end = index + 5
@@ -75,7 +75,7 @@ func (b *builder) build(targets []*entity.Function) map[*entity.Function]string 
 		if end == len(targets) {
 			break
 		}
-		index += PARALLEL_BUILD_NUM
+		index += parallelBuildNum
 	}
 	return binaries
 }

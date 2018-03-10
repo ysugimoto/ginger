@@ -19,12 +19,12 @@ import (
 )
 
 const (
-	RESOURCE_CREATE = "create"
-	RESOURCE_DELETE = "delete"
-	RESOURCE_INVOKE = "invoke"
-	RESOURCE_DEPLOY = "deploy"
-	RESOURCE_LIST   = "list"
-	RESOURCE_HELP   = "help"
+	RESOURCECREATE = "create"
+	RESOURCEDELETE = "delete"
+	RESOURCEINVOKE = "invoke"
+	RESOURCEDEPLOY = "deploy"
+	RESOURCELIST   = "list"
+	RESOURCEHELP   = "help"
 )
 
 // Resource is the struct of AWS API Gateway resource management command.
@@ -43,7 +43,7 @@ func NewResource() *Resource {
 
 // Display help string
 func (r *Resource) Help() string {
-	return COMMAND_HEADER + `
+	return commandHeader() + `
 resource - AWS Resource resource management command.
 
 Usage:
@@ -84,15 +84,15 @@ func (r *Resource) Run(ctx *args.Context) {
 	}()
 
 	switch ctx.At(1) {
-	case RESOURCE_CREATE:
+	case RESOURCECREATE:
 		err = r.createEndpoint(c, ctx)
-	case RESOURCE_DELETE:
+	case RESOURCEDELETE:
 		err = r.deleteEndpoint(c, ctx)
-	case RESOURCE_INVOKE:
+	case RESOURCEINVOKE:
 		err = r.invokeEndpoint(c, ctx)
-	case RESOURCE_DEPLOY:
+	case RESOURCEDEPLOY:
 		err = NewDeploy().deployResource(c, ctx)
-	case RESOURCE_LIST:
+	case RESOURCELIST:
 		err = r.listEndpoint(c, ctx)
 	default:
 		fmt.Println(r.Help())

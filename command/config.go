@@ -21,7 +21,7 @@ func NewConfig() *Config {
 
 // Show this command help.
 func (c *Config) Help() string {
-	return COMMAND_HEADER + `
+	return commandHeader() + `
 config - Set or update project confiugration.
 
 Usage:

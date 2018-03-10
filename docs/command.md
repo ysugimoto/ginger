@@ -264,3 +264,12 @@ $ ginger scheduler attach [options]
 | --name  | Scheduler name. If this option isn't supplied, ginger will ask it                                        |
 
 Ginger will ask attach target function name by list UI.
+
+
+## Show version
+
+Show binary release version.
+
+```
+$ ginger version
+```

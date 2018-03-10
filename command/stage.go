@@ -18,11 +18,11 @@ import (
 )
 
 const (
-	STAGE_CREATE = "create"
-	STAGE_DELETE = "delete"
-	STAGE_DEPLOY = "deploy"
-	STAGE_LIST   = "list"
-	STAGE_HELP   = "help"
+	STAGECREATE = "create"
+	STAGEDELETE = "delete"
+	STAGEDEPLOY = "deploy"
+	STAGELIST   = "list"
+	STAGEHELP   = "help"
 )
 
 // Stage is the struct of AWS API Gateway stage operation command.
@@ -40,7 +40,7 @@ func NewStage() *Stage {
 
 // Show function command help.
 func (s *Stage) Help() string {
-	return COMMAND_HEADER + `
+	return commandHeader() + `
 stage - (AWS API Gateway) stage management command.
 
 Usage:
@@ -75,13 +75,13 @@ func (s *Stage) Run(ctx *args.Context) {
 	}()
 
 	switch ctx.At(1) {
-	case STAGE_CREATE:
+	case STAGECREATE:
 		err = s.createStage(c, ctx)
-	case STAGE_DELETE:
+	case STAGEDELETE:
 		err = s.deleteStage(c, ctx)
-	case STAGE_DEPLOY:
+	case STAGEDEPLOY:
 		// err = NewDeploy().deployStage(c, ctx)
-	case STAGE_LIST:
+	case STAGELIST:
 		err = s.listStage(c, ctx)
 	default:
 		fmt.Println(s.Help())

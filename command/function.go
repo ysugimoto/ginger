@@ -25,15 +25,15 @@ import (
 )
 
 const (
-	FUNCTION_CREATE  = "create"
-	FUNCTION_DELETE  = "delete"
-	FUNCTION_INVOKE  = "invoke"
-	FUNCTION_DEPLOY  = "deploy"
-	FUNCTION_MOUNT   = "mount"
-	FUNCTION_UNMOUNT = "unmount"
-	FUNCTION_LIST    = "list"
-	FUNCTION_HELP    = "help"
-	FUNCTION_LOG     = "log"
+	FUNCTIONCREATE  = "create"
+	FUNCTIONDELETE  = "delete"
+	FUNCTIONINVOKE  = "invoke"
+	FUNCTIONDEPLOY  = "deploy"
+	FUNCTIONMOUNT   = "mount"
+	FUNCTIONUNMOUNT = "unmount"
+	FUNCTIONLIST    = "list"
+	FUNCTIONHELP    = "help"
+	FUNCTIONLOG     = "log"
 )
 
 // Function is the struct of AWS Lambda function operation command.
@@ -52,7 +52,7 @@ func NewFunction() *Function {
 
 // Show function command help.
 func (f *Function) Help() string {
-	return COMMAND_HEADER + `
+	return commandHeader() + `
 funtion - (AWS Lambda) management command.
 
 Usage:
@@ -95,19 +95,19 @@ func (f *Function) Run(ctx *args.Context) {
 	}()
 
 	switch ctx.At(1) {
-	case FUNCTION_CREATE:
+	case FUNCTIONCREATE:
 		err = f.createFunction(c, ctx)
-	case FUNCTION_DELETE:
+	case FUNCTIONDELETE:
 		err = f.deleteFunction(c, ctx)
-	case FUNCTION_INVOKE:
+	case FUNCTIONINVOKE:
 		err = f.invokeFunction(c, ctx)
-	case FUNCTION_DEPLOY:
+	case FUNCTIONDEPLOY:
 		err = NewDeploy().deployFunction(c, ctx)
-	case FUNCTION_MOUNT:
+	case FUNCTIONMOUNT:
 		err = f.mountFunction(c, ctx)
-	case FUNCTION_LIST:
+	case FUNCTIONLIST:
 		err = f.listFunction(c, ctx)
-	case FUNCTION_LOG:
+	case FUNCTIONLOG:
 		err = f.logFunction(c, ctx)
 	default:
 		fmt.Println(f.Help())

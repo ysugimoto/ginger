@@ -20,15 +20,15 @@ import (
 )
 
 const (
-	DEPLOY_FUNCTION = "function"
-	DEPLOY_FN       = "fn"
-	DEPLOY_RESOURCE = "resource"
-	DEPLOY_R        = "r"
-	DEPLOY_STORAGE  = "storage"
-	DEPLOY_SCHEDULE = "schedule"
-	DEPLOY_S        = "s"
-	DEPLOY_ALL      = "all"
-	DEPLOY_HELP     = "help"
+	DEPLOYFUNCTION = "function"
+	DEPLOYFN       = "fn"
+	DEPLOYRESOURCE = "resource"
+	DEPLOYR        = "r"
+	DEPLOYSTORAGE  = "storage"
+	DEPLOYSCHEDULE = "schedule"
+	DEPLOYS        = "s"
+	DEPLOYALL      = "all"
+	DEPLOYHELP     = "help"
 )
 
 // Deploy is the struct that manages function and api deployment.
@@ -46,7 +46,7 @@ func NewDeploy() *Deploy {
 
 // Show deloy command help
 func (d *Deploy) Help() string {
-	return COMMAND_HEADER + `
+	return commandHeader() + `
 deploy - Deploy management functions and apis.
 
 Usage:
@@ -102,27 +102,27 @@ func (d *Deploy) Run(ctx *args.Context) {
 	}()
 
 	switch ctx.At(1) {
-	case DEPLOY_FUNCTION, DEPLOY_FN:
+	case DEPLOYFUNCTION, DEPLOYFN:
 		if err = d.runHook(c); err != nil {
 			return
 		}
 		err = d.deployFunction(c, ctx)
-	case DEPLOY_RESOURCE, DEPLOY_R:
+	case DEPLOYRESOURCE, DEPLOYR:
 		if err = d.runHook(c); err != nil {
 			return
 		}
 		err = d.deployResource(c, ctx)
-	case DEPLOY_SCHEDULE, DEPLOY_S:
+	case DEPLOYSCHEDULE, DEPLOYS:
 		if err = d.runHook(c); err != nil {
 			return
 		}
 		err = d.deploySchedulers(c, ctx)
-	case DEPLOY_STORAGE:
+	case DEPLOYSTORAGE:
 		if err = d.runHook(c); err != nil {
 			return
 		}
 		err = d.deployStorage(c, ctx)
-	case DEPLOY_ALL:
+	case DEPLOYALL:
 		if err = d.runHook(c); err != nil {
 			return
 		}

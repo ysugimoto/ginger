@@ -7,11 +7,16 @@ import (
 	"github.com/ysugimoto/go-args"
 )
 
-const COMMAND_HEADER = `============================================================
- ginger: Go runtime lambda function framework
+var version string = "dev"
+
+func commandHeader() string {
+	return `============================================================
+ ginger: Go runtime lambda function framework ` + version + `
 ============================================================`
+}
 
 const (
+	VERSION   = "version"
 	INIT      = "init"
 	INSTALL   = "install"
 	CONFIG    = "config"

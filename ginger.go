@@ -33,6 +33,8 @@ func main() {
 
 	var cmd command.Command
 	switch ctx.At(0) {
+	case command.VERSION:
+		cmd = command.NewVersion()
 	case command.INIT:
 		cmd = command.NewInit()
 	case command.INSTALL:

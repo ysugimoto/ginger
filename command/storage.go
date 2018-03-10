@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	STORAGE_DEPLOY  = "deploy"
-	STORAGE_MOUNT   = "mount"
-	STORAGE_UNMOUNT = "unmount"
+	STORAGEDEPLOY  = "deploy"
+	STORAGEMOUNT   = "mount"
+	STORAGEUNMOUNT = "unmount"
 )
 
 type Storage struct {
@@ -28,7 +28,7 @@ func NewStorage() *Storage {
 }
 
 func (s *Storage) Help() string {
-	return COMMAND_HEADER + `
+	return commandHeader() + `
 storage - (AWS S3) management command.
 
 Usage:
@@ -63,11 +63,11 @@ func (s *Storage) Run(ctx *args.Context) {
 	}()
 
 	switch ctx.At(1) {
-	case STORAGE_DEPLOY:
+	case STORAGEDEPLOY:
 		err = NewDeploy().deployStorage(c, ctx)
-	case STORAGE_MOUNT:
+	case STORAGEMOUNT:
 		err = s.mountStorage(c, ctx)
-	case STORAGE_UNMOUNT:
+	case STORAGEUNMOUNT:
 		err = s.unmountStorage(c, ctx)
 	default:
 		fmt.Println(s.Help())

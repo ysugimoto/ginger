@@ -47,5 +47,5 @@ Options:
 
 To see subcommand help, run "ginger [subcommand] help".`
 
-	return COMMAND_HEADER + help
+	return commandHeader() + help
 }
