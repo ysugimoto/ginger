@@ -237,7 +237,9 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 
 	// Build functions
 	builder := newBuilder(c.FunctionPath, buildDir, c.LibPath)
-	builder.build(targets)
+	if err := builder.build(targets); err != nil {
+		return exception("Failed to build lambda function. %s", err.Error())
+	}
 
 	// Deploy to AWS
 	lambda := request.NewLambda(c)

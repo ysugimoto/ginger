@@ -32,11 +32,12 @@ func newBuilder(src, dest, libPath string) *builder {
 }
 
 // build builds go application by each functions
-func (b *builder) build(targets []*entity.Function) {
+func (b *builder) build(targets []*entity.Function) error {
 	log := logger.WithNamespace("ginger.build")
 
 	// Parallel build by each functions
 	index := 0
+	errorBuilds := []error{}
 	for {
 		var end int
 		if len(targets) < index+parallelBuildNum {
@@ -61,6 +62,7 @@ func (b *builder) build(targets []*entity.Function) {
 				select {
 				case e := <-err:
 					log.Errorf("Failed to build function: %s\n", e.Error())
+					errorBuilds = append(errorBuilds, e)
 					return
 				case <-success:
 					log.Infof("Function %s built successfully\n", fn.Name)
@@ -74,6 +76,11 @@ func (b *builder) build(targets []*entity.Function) {
 		}
 		index += parallelBuildNum
 	}
+
+	if len(errorBuilds) > 0 {
+		return errors.New("Either function build failed")
+	}
+	return nil
 }
 
 // compile compiles go application by `go build` command.
