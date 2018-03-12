@@ -52,7 +52,7 @@ ginger init
 
 ### Create function
 
-To create new function, run the `ginger fucntion create --name [function name]` command.
+To create new function, run the `ginger function create --name [function name]` command.
 
 `ginger` creates function structure under the `functions/` directory, and write out to configuration of `Ginger.toml`.
 
