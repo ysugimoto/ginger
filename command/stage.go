@@ -89,7 +89,24 @@ func (s *Stage) Run(ctx *args.Context) {
 }
 
 // createStage creates new stage.
-// If REST API has already been created, also create stage to that API.
+//
+// >>> doc
+//
+// ## Create new stage
+//
+// Create new API Gateway stage.
+//
+// ```
+// $ ginger stage create [options]
+// ```
+//
+// | option  | description           |
+// |:-------:|:----------------------|
+// | --name  | [Required] Stage name |
+//
+// If REST API has already been created, also create stage to API Gateway.
+//
+// <<< doc
 func (s *Stage) createStage(c *config.Config, ctx *args.Context) (err error) {
 	name := ctx.String("name")
 	if name == "" {
@@ -109,7 +126,25 @@ func (s *Stage) createStage(c *config.Config, ctx *args.Context) (err error) {
 }
 
 // deleteStage deletes stage.
+//
+// >>> doc
+//
+// ## Delete stage
+//
+// Delete stage.
+//
+// ```
+// $ ginger stage delete [options]
+// ```
+//
+// | option  | description                                    |
+// |:-------:|:-----------------------------------------------|
+// | --name  | [Required] Stage name which you want to delete |
+//
 // If stage has been deployed on AWS API Gateway, also delete it.
+// It means no longer access to that stage API.
+//
+// <<< doc
 func (s *Stage) deleteStage(c *config.Config, ctx *args.Context) error {
 	name := ctx.String("name")
 	if name == "" {
@@ -144,6 +179,18 @@ func (s *Stage) deleteStage(c *config.Config, ctx *args.Context) error {
 }
 
 // listStage shows registered stages.
+//
+// >>> doc
+//
+// ## List stages`
+//
+// Display list of created stages.
+//
+// ```
+// $ ginger stage list
+// ```
+//
+// <<< doc
 func (s *Stage) listStage(c *config.Config, ctx *args.Context) error {
 	api := request.NewAPIGateway(c)
 	stages := api.GetStages(c.RestApiId)

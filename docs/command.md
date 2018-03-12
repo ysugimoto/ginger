@@ -213,6 +213,62 @@ This command is run automatically on initialize, but if you checkout project aft
 You can install dependency packages via this command.
 
 
+## Create new resource
+
+Create new API Gateway resource.
+
+```
+$ ginger resource create [options]
+```
+
+| option  | description                                                                                              |
+|:-------:|:---------------------------------------------------------------------------------------------------------|
+| --path  | Resource path. If this option isn't supplied, ginger will ask it                                         |
+
+API Gateway manages resources as 'path part' by each segments,
+But ginger can manage resource as path, so you don't need to care about it.
+
+
+## Delete resource
+
+Delete resource endpoint.
+
+```
+$ ginger resource delete [options]
+```
+
+| option  | description                                       |
+|:-------:|:--------------------------------------------------|
+| --path  | [Required] Resource path which you want to delete |
+
+Note that if sub-path exists on target path, those paths also will be deleted.
+
+
+## Invoke resource
+
+Send HTTP request to destination endpoint.
+
+```
+$ ginger resource invoke [options]
+```
+
+| option   | description                                                       |
+|:--------:|:------------------------------------------------------------------|
+| --stage  | [Required] Target stage which you deployed to                     |
+| --path   | Resource path. If this option isn't supplied, ginger will ask it  |
+| --method | HTTP request method. Default is GET                               |
+| --body   | Request body string. This option enables only POST or PUT request |
+
+
+## List resources
+
+Display list of registered API Gateway resources.
+
+```
+$ ginger resource list
+```
+
+
 ## Create new scheduler
 
 Create new cloudwatch scheduler .
@@ -264,6 +320,46 @@ $ ginger scheduler attach [options]
 | --name  | Scheduler name. If this option isn't supplied, ginger will ask it                                        |
 
 Ginger will ask attach target function name by list UI.
+
+
+## Create new stage
+
+Create new API Gateway stage.
+
+```
+$ ginger stage create [options]
+```
+
+| option  | description           |
+|:-------:|:----------------------|
+| --name  | [Required] Stage name |
+
+If REST API has already been created, also create stage to API Gateway.
+
+
+## Delete stage
+
+Delete stage.
+
+```
+$ ginger stage delete [options]
+```
+
+| option  | description                                    |
+|:-------:|:-----------------------------------------------|
+| --name  | [Required] Stage name which you want to delete |
+
+If stage has been deployed on AWS API Gateway, also delete it.
+It means no longer access to that stage API.
+
+
+## List stages`
+
+Display list of created stages.
+
+```
+$ ginger stage list
+```
 
 
 ## Show version

@@ -100,7 +100,25 @@ func (r *Resource) Run(ctx *args.Context) {
 }
 
 // createEndpoint creates new resource by supplied path
-// -p, --path options is required.
+//
+// >>> doc
+//
+// ## Create new resource
+//
+// Create new API Gateway resource.
+//
+// ```
+// $ ginger resource create [options]
+// ```
+//
+// | option  | description                                                                                              |
+// |:-------:|:---------------------------------------------------------------------------------------------------------|
+// | --path  | Resource path. If this option isn't supplied, ginger will ask it                                         |
+//
+// API Gateway manages resources as 'path part' by each segments,
+// But ginger can manage resource as path, so you don't need to care about it.
+//
+// <<< doc
 func (r *Resource) createEndpoint(c *config.Config, ctx *args.Context) error {
 	path := ctx.String("path")
 	if path == "" {
@@ -124,7 +142,24 @@ func (r *Resource) createEndpoint(c *config.Config, ctx *args.Context) error {
 }
 
 // deleteEndpoint deletes resource by supplied path.
+//
+// >>> doc
+//
+// ## Delete resource
+//
+// Delete resource endpoint.
+//
+// ```
+// $ ginger resource delete [options]
+// ```
+//
+// | option  | description                                       |
+// |:-------:|:--------------------------------------------------|
+// | --path  | [Required] Resource path which you want to delete |
+//
 // Note that if sub-path exists on target path, those paths also will be deleted.
+//
+// <<< doc
 func (r *Resource) deleteEndpoint(c *config.Config, ctx *args.Context) error {
 	path := ctx.String("path")
 	if path == "" {
@@ -158,6 +193,25 @@ func (r *Resource) deleteEndpoint(c *config.Config, ctx *args.Context) error {
 }
 
 // invokeEndpoint invokes resource with HTTP request.
+//
+// >>> doc
+//
+// ## Invoke resource
+//
+// Send HTTP request to destination endpoint.
+//
+// ```
+// $ ginger resource invoke [options]
+// ```
+//
+// | option   | description                                                       |
+// |:--------:|:------------------------------------------------------------------|
+// | --stage  | [Required] Target stage which you deployed to                     |
+// | --path   | Resource path. If this option isn't supplied, ginger will ask it  |
+// | --method | HTTP request method. Default is GET                               |
+// | --body   | Request body string. This option enables only POST or PUT request |
+//
+// <<< doc
 // Ensure some lambda fucntion integartion has set to handle request. Otherwise request will be failed.
 func (r *Resource) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 	stage := ctx.String("stage")
@@ -209,6 +263,18 @@ func (r *Resource) invokeEndpoint(c *config.Config, ctx *args.Context) error {
 }
 
 // listEndpoint shows endpoint list
+//
+// >>> doc
+//
+// ## List resources
+//
+// Display list of registered API Gateway resources.
+//
+// ```
+// $ ginger resource list
+// ```
+//
+// <<< doc
 func (r *Resource) listEndpoint(c *config.Config, ctx *args.Context) error {
 	t, err := tty.Open()
 	if err != nil {
