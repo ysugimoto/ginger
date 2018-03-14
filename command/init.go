@@ -6,9 +6,6 @@ import (
 
 	"path/filepath"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/ysugimoto/go-args"
 
 	"github.com/ysugimoto/ginger/config"
@@ -16,6 +13,10 @@ import (
 	"github.com/ysugimoto/ginger/internal/colors"
 	"github.com/ysugimoto/ginger/logger"
 )
+
+const awsRegionInquiry = `[AWS region]
+Region name which you want to deploy resources.
+`
 
 const lambdaRoleInquiry = `[Need lambda execution role]
 If you will use Lambda function, Need to set "LambdaExecutionRole".
@@ -77,7 +78,7 @@ func (i *Init) Help() string {
 // Note that the `Ginger.toml` is readable and configurable, but almost values are added or updated via subcommands.
 // So we don't recommend you change this file manually.
 //
-// And, when initializing project, ginger asks two questions.
+// And, when initializing project, ginger asks some questions.
 //
 // #### LambdaExecutionRole
 //
@@ -89,7 +90,11 @@ func (i *Init) Help() string {
 //
 // #### S3BucketName
 //
-// ginger uses S3 bucket name project director name as defaut. You can change this name.
+// ginger uses S3 bucket name project directory name as defaut. You can change this name.
+
+// #### Region
+//
+// Destination AWS region which ginger create resources.
 //
 // <<< doc
 func (i *Init) Run(ctx *args.Context) {
@@ -122,15 +127,6 @@ func (i *Init) Run(ctx *args.Context) {
 
 	if p := ctx.String("profile"); p != "" {
 		c.Profile = p
-		i.log.Printf("Profile set as %s\n", c.Profile)
-	}
-	if r := i.regionFromProfile(c.Profile); r != "" {
-		c.Region = r
-		i.log.Printf("Region set as %s\n", c.Region)
-	}
-	if r := ctx.String("region"); r != "" {
-		c.Region = r
-		i.log.Printf("Region set as %s\n", c.Region)
 	}
 	if r := ctx.String("role"); r != "" {
 		c.DefaultLambdaRole = r
@@ -142,7 +138,7 @@ func (i *Init) Run(ctx *args.Context) {
 	if c.DefaultLambdaRole == "" {
 		fmt.Println(colors.Yellow(lambdaRoleInquiry))
 		if role := input.String("Input lambda execution role ARN (empty to skip)"); role == "" {
-			i.log.Warn("Lambda Execution Role isn't set. If you want to set, run 'ginger config --role [role name]'")
+			i.log.Print("Lambda Execution Role isn't set. If you want to set, run 'ginger config --role [role name]'\n")
 		} else {
 			c.DefaultLambdaRole = role
 		}
@@ -155,19 +151,11 @@ func (i *Init) Run(ctx *args.Context) {
 			c.S3BucketName = bucketName
 		}
 	}
+	fmt.Println(colors.Yellow(awsRegionInquiry))
+	if region := input.String(fmt.Sprintf("Input region name (default: %s)", c.Region)); region != "" {
+		c.Region = region
+	}
 	c.Write()
 	NewInstall().Run(ctx)
 	i.log.Info("ginger initalized successfully!")
-}
-
-// Try to get region from supplied profile.
-func (i *Init) regionFromProfile(profile string) string {
-	var sess *session.Session
-	if profile != "" {
-		creds := credentials.NewSharedCredentials("", profile)
-		sess = session.New(aws.NewConfig().WithCredentials(creds))
-	} else {
-		sess = session.Must(session.NewSession())
-	}
-	return *sess.Config.Region
 }

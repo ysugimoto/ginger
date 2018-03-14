@@ -15,7 +15,6 @@ func main() {
 		Alias("help", "h", nil).
 		Alias("name", "n", "").
 		Alias("profile", "", "").
-		Alias("region", "", "").
 		Alias("role", "", "").
 		Alias("hook", "", "").
 		Alias("path", "p", "").
