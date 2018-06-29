@@ -1,8 +1,10 @@
 package command
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
+	"io"
 
 	"github.com/ysugimoto/ginger/assets"
 	"github.com/ysugimoto/go-args"
@@ -19,8 +21,10 @@ func NewHelp() *Help {
 
 func (h *Help) Run(ctx *args.Context) {
 	if ctx.At(0) == "ale" {
-		b, _ := assets.Asset("ale")
-		d, _ := base64.StdEncoding.DecodeString(string(b))
+		file, _ := assets.Assets.Open("/ale")
+		b := new(bytes.Buffer)
+		io.Copy(b, file)
+		d, _ := base64.StdEncoding.DecodeString(b.String())
 		fmt.Println(string(d))
 	} else {
 		fmt.Println(h.Help())

@@ -19,7 +19,7 @@ publish: build-release
 	sh ./_tools/github-release.sh
 
 assets:
-	go-bindata -o assets/assets.go --pkg assets --prefix misc ./misc
+	go-assets-builder -o assets/assets.go -p assets -s "/misc" ./misc
 
 docs:
 	go run ./_tools/generate-doc.go
