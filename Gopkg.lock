@@ -60,15 +60,15 @@
   revision = "3de563c3dc08a7504131e9d63f678b7d1c3e85d7"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/jessevdk/go-assets"
+  packages = ["."]
+  revision = "4f4301a06e153ff90e17793577ab6bf79f8dc5c5"
+
+[[projects]]
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   revision = "0b12d6b5"
-
-[[projects]]
-  name = "github.com/mattn/go-bindata"
-  packages = ["."]
-  revision = "bbd0c6e271208dce66d8fda4bc536453cd27fc4a"
-  version = "v3.0.7"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -121,6 +121,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "912d17f7dfb2d229fcdf74f7ffbfa3204b3e83315231760dffb2e70ab24541d3"
+  inputs-digest = "bc63bb5f368aafae9382cc0579e949d2c72ccbe14a4c5c7f94edc91f195a8339"
   solver-name = "gps-cdcl"
   solver-version = 1

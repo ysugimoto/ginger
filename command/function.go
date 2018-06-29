@@ -1,8 +1,10 @@
 package command
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"syscall"
@@ -184,7 +186,10 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 
 // buildTemplate makes lambda function boilterplace from supplied arguments.
 func (f *Function) buildTemplate(name, eventSource string) []byte {
-	tmpl, _ := assets.Asset("main.go.template")
+	tmpl, _ := assets.Assets.Open("/main.go.template")
+	b := new(bytes.Buffer)
+
+	io.Copy(b, tmpl)
 	binds := []interface{}{}
 
 	switch eventSource {
@@ -229,7 +234,7 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 			strcase.ToCamel(name),
 		)
 	}
-	return []byte(fmt.Sprintf(string(tmpl), binds...))
+	return []byte(fmt.Sprintf(b.String(), binds...))
 }
 
 // deleteFunction deletes function.
