@@ -25,7 +25,7 @@
 #   unused-packages = true
 #
 
-required = ["github.com/mattn/go-bindata"]
+required = ["github.com/jessevdk/go-assets"]
 
 [[constraint]]
   name = "github.com/BurntSushi/toml"
