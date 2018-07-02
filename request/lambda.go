@@ -128,6 +128,21 @@ func (l *LambdaRequest) CreateFunction(fn *entity.Function, zipBytes []byte) (st
 		Runtime:      aws.String("go1.x"),
 		Timeout:      aws.Int64(fn.Timeout),
 	}
+	// Append VPC configuration if specified
+	if fn.VPC != nil {
+		sn := []*string{}
+		sg := []*string{}
+		for _, v := range fn.VPC.Subnets {
+			sn = append(sn, aws.String(v))
+		}
+		for _, v := range fn.VPC.SecurityGroups {
+			sg = append(sg, aws.String(v))
+		}
+		input = input.SetVpcConfig(&lambda.VpcConfig{
+			SubnetIds:        sn,
+			SecurityGroupIds: sg,
+		})
+	}
 	debugRequest(input)
 	result, err := l.svc.CreateFunction(input)
 	if err != nil {
@@ -245,6 +260,21 @@ func (l *LambdaRequest) UpdateFunctionConfiguration(fn *entity.Function) error {
 		FunctionName: aws.String(fn.Name),
 		MemorySize:   aws.Int64(fn.MemorySize),
 		Timeout:      aws.Int64(fn.Timeout),
+	}
+	// Append VPC configuration if specified
+	if fn.VPC != nil {
+		sn := []*string{}
+		sg := []*string{}
+		for _, v := range fn.VPC.Subnets {
+			sn = append(sn, aws.String(v))
+		}
+		for _, v := range fn.VPC.SecurityGroups {
+			sg = append(sg, aws.String(v))
+		}
+		input = input.SetVpcConfig(&lambda.VpcConfig{
+			SubnetIds:        sn,
+			SecurityGroupIds: sg,
+		})
 	}
 	debugRequest(input)
 	result, err := l.svc.UpdateFunctionConfiguration(input)

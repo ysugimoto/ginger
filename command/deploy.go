@@ -78,8 +78,8 @@ Options:
 // $ ginger deploy all [options]
 // ```
 //
-// | option  | description                                                       |
-// |:-------:|:-------------------------------------------------------------------:|
+// | option  | description                                                         |
+// |:-------:|:--------------------------------------------------------------------|
 // | --stage | Stage name. If this option is supplied, create deployment to stage. |
 //
 // <<< doc
@@ -189,7 +189,7 @@ func (d *Deploy) runHook(c *config.Config) error {
 // ```
 //
 // | option | description                                                       |
-// |:------:|:-----------------------------------------------------------------:|
+// |:------:|:------------------------------------------------------------------|
 // | --name | Function name. if this option didn't supply, deploy all functions |
 //
 // <<< doc
@@ -346,7 +346,7 @@ func (d *Deploy) archive(fn *entity.Function, binPath string) ([]byte, error) {
 // If resource has some integrations, create integration as well.
 //
 // | option  | description                                                         |
-// |:-------:|:-------------------------------------------------------------------:|
+// |:-------:|:--------------------------------------------------------------------|
 // | --stage | Stage name. If this option is supplied, create deployment to stage. |
 //
 // <<< doc

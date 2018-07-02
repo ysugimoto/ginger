@@ -129,7 +129,7 @@ func (f *Function) Run(ctx *args.Context) {
 // ```
 //
 // | option  | description                                                                                              |
-// |:-------:|:--------------------------------------------------------------------------------------------------------:|
+// |:-------:|:---------------------------------------------------------------------------------------------------------|
 // | --name  | Function name. If this option isn't supplied, ginger will ask it                                         |
 // | --event | Function event source. function template switches by this option. enable values are `s3` or `apigateway` |
 //
@@ -251,7 +251,7 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 // ```
 //
 // | option  | description              |
-// |:-------:|:------------------------:|
+// |:-------:|:-------------------------|
 // | --name  | [Required] function name |
 //
 // <<< doc
@@ -301,7 +301,7 @@ func (f *Function) deleteFunction(c *config.Config, ctx *args.Context) error {
 // ```
 //
 // | option  | description                                                                                           |
-// |:-------:|:-----------------------------------------------------------------------------------------------------:|
+// |:-------:|:------------------------------------------------------------------------------------------------------|
 // | --name  | [Required] function name                                                                              |
 // | --event | Passing event source data. data must be JSON format string, or can specify file name like `@filename` |
 //
@@ -392,7 +392,7 @@ func (f *Function) listFunction(c *config.Config, ctx *args.Context) error {
 // ```
 //
 // | option  | description                                                                                              |
-// |:-------:|:--------------------------------------------------------------------------------------------------------:|
+// |:-------:|:---------------------------------------------------------------------------------------------------------|
 // | --name  | Function name. If this option isn't supplied, ginger will ask it                                         |
 //
 // <<< doc
@@ -436,7 +436,7 @@ func (f *Function) logFunction(c *config.Config, ctx *args.Context) error {
 // ```
 //
 // | option   | description                                                      |
-// |:--------:|:----------------------------------------------------------------:|
+// |:--------:|:-----------------------------------------------------------------|
 // | --name   | Function name. If this option isn't supplied, ginger will ask it |
 // | --path   | Resource path. If this option isn't supplied, ginger will ask it |
 // | --method | Integration method                                               |
@@ -496,7 +496,7 @@ func (f *Function) mountFunction(c *config.Config, ctx *args.Context) error {
 // ```
 //
 // | option   | description                                                      |
-// |:--------:|:----------------------------------------------------------------:|
+// |:--------:|:-----------------------------------------------------------------|
 // | --path   | Resource path. If this option isn't supplied, ginger will ask it |
 // | --method | Integration method                                               |
 //
