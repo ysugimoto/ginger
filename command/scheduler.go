@@ -129,7 +129,7 @@ func (s *Scheduler) writeConfig(c *config.Config, sc *entity.Scheduler) error {
 // ```
 //
 // | option  | description                                                                                              |
-// |:-------:|:--------------------------------------------------------------------------------------------------------:|
+// |:-------:|:---------------------------------------------------------------------------------------------------------|
 // | --name  | Function name. If this option isn't supplied, ginger will ask it                                         |
 //
 // After defined name, ginger want to input `expression`, you need to input CloudWatchEvent expression.
@@ -179,7 +179,7 @@ func (s *Scheduler) createScheduler(c *config.Config, ctx *args.Context) (err er
 // ```
 //
 // | option  | description               |
-// |:-------:|:-------------------------:|
+// |:-------:|:--------------------------|
 // | --name  | [Required] scheduler name |
 //
 // <<< doc
@@ -271,9 +271,9 @@ func (s *Scheduler) listScheduler(c *config.Config, ctx *args.Context) error {
 // $ ginger scheduler attach [options]
 // ```
 //
-// | option  | description                                                                                              |
-// |:-------:|:--------------------------------------------------------------------------------------------------------:|
-// | --name  | Scheduler name. If this option isn't supplied, ginger will ask it                                        |
+// | option  | description                                                        |
+// |:-------:|:-------------------------------------------------------------------|
+// | --name  | Scheduler name. If this option isn't supplied, ginger will ask it  |
 //
 // Ginger will ask attach target function name by list UI.
 //

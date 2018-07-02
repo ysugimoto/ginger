@@ -49,7 +49,7 @@ Options:
 // ```
 //
 // | option    | description                                                                  |
-// |:---------:|:----------------------------------------------------------------------------:|
+// |:---------:|:-----------------------------------------------------------------------------|
 // | --profile | Accout profile name. If empty, ginger uses `default` or environment variable |
 // | --region  | Region name to deploy                                                        |
 // | --bucket  | S3 bucket name                                                               |
