@@ -55,7 +55,7 @@ func NewFunction() *Function {
 // Show function command help.
 func (f *Function) Help() string {
 	return commandHeader() + `
-funtion - (AWS Lambda) management command.
+function - (AWS Lambda) management command.
 
 Usage:
   $ ginger fn [operation] [options]
