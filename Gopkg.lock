@@ -101,6 +101,12 @@
   version = "v0.8.0"
 
 [[projects]]
+  name = "github.com/scylladb/go-set"
+  packages = ["strset"]
+  revision = "be531f0d9b5775179975bcf126cb193921895b7b"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/ysugimoto/cho"
   packages = ["."]
@@ -121,6 +127,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bc63bb5f368aafae9382cc0579e949d2c72ccbe14a4c5c7f94edc91f195a8339"
+  inputs-digest = "42125e3c82fb40a4bc7d24a674731b0dce622b6ba3e718eacc13034ecb3814ee"
   solver-name = "gps-cdcl"
   solver-version = 1
