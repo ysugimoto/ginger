@@ -150,6 +150,7 @@ func (i *Install) Run(ctx *args.Context) {
 //
 // This command is run automatically on initialize, but if you checkout project after initialize,
 // You can install dependency packages via this command.
+// ginger detects imports from your *.go file and install inside `.ginger` directory.
 //
 // <<< doc
 func (i *Install) installDependencies(pkg, tmpDir string, wg *sync.WaitGroup) {
