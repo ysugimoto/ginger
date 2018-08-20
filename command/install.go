@@ -26,7 +26,7 @@ func findDependencyPackages(root string) ([]*strset.Set, error) {
 		return nil, err
 	}
 
-	// aws-lamda-go is required of default
+	// aws-lamda-go is required as default
 	packages := []*strset.Set{
 		strset.New("github.com/aws/aws-lambda-go"),
 		strset.New(),
@@ -42,10 +42,12 @@ func findDependencyPackages(root string) ([]*strset.Set, error) {
 			continue
 		}
 		for _, i := range ast.Imports {
+			// Import path value also contains double quotes, so we trim them
 			pkg := strings.Trim(i.Path.Value, `"`)
 			if !strings.Contains(pkg, ".") {
 				continue
 			}
+			// Get import path depth
 			level := len(strings.Split(pkg, "/")) - 3
 			if level < 0 {
 				continue
@@ -57,7 +59,7 @@ func findDependencyPackages(root string) ([]*strset.Set, error) {
 	return packages, nil
 }
 
-// walk function directoryy recursively and list files which has ".go" extension.
+// walk function directory recursively and list files which have ".go" extension.
 func listFunctionScriptFiles(root string) ([]string, error) {
 	files := []string{}
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
