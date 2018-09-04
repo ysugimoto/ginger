@@ -128,6 +128,11 @@ func (l *LambdaRequest) CreateFunction(fn *entity.Function, zipBytes []byte) (st
 		Runtime:      aws.String("go1.x"),
 		Timeout:      aws.Int64(fn.Timeout),
 	}
+	if fn.Environment != nil {
+		input = input.SetEnvironment(&lambda.Environment{
+			Variables: fn.Environment,
+		})
+	}
 	// Append VPC configuration if specified
 	if fn.VPC != nil {
 		sn := []*string{}
@@ -274,6 +279,11 @@ func (l *LambdaRequest) UpdateFunctionConfiguration(fn *entity.Function) error {
 		input = input.SetVpcConfig(&lambda.VpcConfig{
 			SubnetIds:        sn,
 			SecurityGroupIds: sg,
+		})
+	}
+	if fn.Environment != nil {
+		input = input.SetEnvironment(&lambda.Environment{
+			Variables: fn.Environment,
 		})
 	}
 	debugRequest(input)

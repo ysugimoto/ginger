@@ -11,19 +11,19 @@ var _Assets7e9bedb64677d9d3d7167b59bc342e1eb5dbd8d8 = "package main\n\nimport (\
 
 // Assets returns go-assets FileSystem
 var Assets = assets.NewFileSystem(map[string][]string{"/": []string{"ale", "main.go.template"}}, map[string]*assets.File{
-	"/main.go.template": &assets.File{
-		Path:     "/main.go.template",
-		FileMode: 0x1a4,
-		Mtime:    time.Unix(1519130263, 1519130263000000000),
-		Data:     []byte(_Assets7e9bedb64677d9d3d7167b59bc342e1eb5dbd8d8),
-	}, "/": &assets.File{
+	"/": &assets.File{
 		Path:     "/",
 		FileMode: 0x800001ed,
-		Mtime:    time.Unix(1519130263, 1519130263000000000),
+		Mtime:    time.Unix(1534654234, 1534654234703348760),
 		Data:     nil,
 	}, "/ale": &assets.File{
 		Path:     "/ale",
 		FileMode: 0x1a4,
-		Mtime:    time.Unix(1518347191, 1518347191000000000),
+		Mtime:    time.Unix(1534654234, 1534654234703245073),
 		Data:     []byte(_Assetsdbfa9bb4fc5340440719a646c285441fc9134ddd),
+	}, "/main.go.template": &assets.File{
+		Path:     "/main.go.template",
+		FileMode: 0x1a4,
+		Mtime:    time.Unix(1534654234, 1534654234703426397),
+		Data:     []byte(_Assets7e9bedb64677d9d3d7167b59bc342e1eb5dbd8d8),
 	}}, "")
