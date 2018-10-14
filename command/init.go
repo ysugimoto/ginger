@@ -106,18 +106,22 @@ func (i *Init) Run(ctx *args.Context) {
 	if _, err := os.Stat(c.FunctionPath); err != nil {
 		i.log.Printf("Create functions directory: %s\n", c.FunctionPath)
 		os.Mkdir(c.FunctionPath, 0755)
+		i.ensureKeepFile(c.FunctionPath)
 	}
 	if _, err := os.Stat(c.StoragePath); err != nil {
 		i.log.Printf("Create storage directory: %s\n", c.StoragePath)
 		os.Mkdir(c.StoragePath, 0755)
+		i.ensureKeepFile(c.StoragePath)
 	}
 	if _, err := os.Stat(c.StagePath); err != nil {
 		i.log.Printf("Create stages directory: %s\n", c.StagePath)
 		os.Mkdir(c.StagePath, 0755)
+		i.ensureKeepFile(c.StagePath)
 	}
 	if _, err := os.Stat(c.SchedulerPath); err != nil {
 		i.log.Printf("Create scheduler directory: %s\n", c.SchedulerPath)
 		os.Mkdir(c.SchedulerPath, 0755)
+		i.ensureKeepFile(c.SchedulerPath)
 	}
 
 	c.ProjectName = filepath.Base(c.Root)
@@ -158,4 +162,16 @@ func (i *Init) Run(ctx *args.Context) {
 	c.Write()
 	NewInstall().Run(ctx)
 	i.log.Info("ginger initalized successfully!")
+}
+
+// Ensure .keep file and create if not exist
+// The .keep file is needed for adding directory to git
+func (i *Init) ensureKeepFile(dir) {
+	keepFile := filepath.Join(dir, ".keep")
+	if _, err := os.Stat(keepFile); err == nil {
+		return
+	}
+	// Create empty file
+	fp, _ := os.OpenFile(keepFile, os.O_CREATE|os.O_RDONLY, 0666)
+	fp.Close()
 }
