@@ -166,7 +166,7 @@ func (i *Init) Run(ctx *args.Context) {
 
 // Ensure .keep file and create if not exist
 // The .keep file is needed for adding directory to git
-func (i *Init) ensureKeepFile(dir) {
+func (i *Init) ensureKeepFile(dir string) {
 	keepFile := filepath.Join(dir, ".keep")
 	if _, err := os.Stat(keepFile); err == nil {
 		return
