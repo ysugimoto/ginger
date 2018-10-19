@@ -158,6 +158,7 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 			"API Gateway",
 			"S3",
 			"CloudWatch Event",
+			"SQS Event",
 		})
 	}
 
@@ -220,6 +221,15 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 			"\n\t\"github.com/aws/aws-lambda-go/events\"",
 			strcase.ToCamel(name),
 			"cloudWatchEvent events.CloudWatchEvent",
+			"error",
+			"nil",
+			strcase.ToCamel(name),
+		)
+	case "SQS Event":
+		binds = append(binds,
+			"\n\t\"github.com/aws/aws-lambda-go/events\"",
+			strcase.ToCamel(name),
+			"sqsEvent events.SQSEvent",
 			"error",
 			"nil",
 			strcase.ToCamel(name),
