@@ -37,7 +37,7 @@ const (
 // Command is the interface implemented by structs that can run the command
 // and show help as usage.
 type Command interface {
-	Run(ctx *args.Context)
+	Run(ctx *args.Context) error
 	Help() string
 }
 

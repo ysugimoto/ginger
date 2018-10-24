@@ -60,7 +60,7 @@ func main() {
 
 	if ctx.Has("help") || ctx.At(1) == "help" {
 		fmt.Println(cmd.Help())
-	} else {
-		cmd.Run(ctx)
+	} else if err := cmd.Run(ctx); err != nil {
+		os.Exit(1)
 	}
 }

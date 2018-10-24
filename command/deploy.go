@@ -2,6 +2,7 @@ package command
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -83,11 +84,11 @@ Options:
 // | --stage | Stage name. If this option is supplied, create deployment to stage. |
 //
 // <<< doc
-func (d *Deploy) Run(ctx *args.Context) {
+func (d *Deploy) Run(ctx *args.Context) error {
 	c := config.Load()
 	if !c.Exists() {
 		d.log.Error("Configuration file could not load. Run `ginger init` before.")
-		return
+		return errors.New("")
 	}
 	var err error
 	defer func() {
@@ -104,54 +105,55 @@ func (d *Deploy) Run(ctx *args.Context) {
 	switch ctx.At(1) {
 	case DEPLOYFUNCTION, DEPLOYFN:
 		if err = d.runHook(c); err != nil {
-			return
+			return err
 		}
 		err = d.deployFunction(c, ctx)
 	case DEPLOYRESOURCE, DEPLOYR:
 		if err = d.runHook(c); err != nil {
-			return
+			return err
 		}
 		err = d.deployResource(c, ctx)
 	case DEPLOYSCHEDULE, DEPLOYS:
 		if err = d.runHook(c); err != nil {
-			return
+			return err
 		}
 		err = d.deploySchedulers(c, ctx)
 	case DEPLOYSTORAGE:
 		if err = d.runHook(c); err != nil {
-			return
+			return err
 		}
 		err = d.deployStorage(c, ctx)
 	case DEPLOYALL:
 		if err = d.runHook(c); err != nil {
-			return
+			return err
 		}
 		d.log.Print("========== Function Deployment ==========")
 		if err = d.deployFunction(c, ctx); err != nil {
-			return
+			return err
 		}
 		d.log.Print("========== Storage Deployment ==========")
 		if err = d.deployStorage(c, ctx); err != nil {
-			return
+			return err
 		}
 		d.log.Print("========== Scheduler Deployment ==========")
 		if err = d.deploySchedulers(c, ctx); err != nil {
-			return
+			return err
 		}
 		d.log.Print("========== Resource Deployment ==========")
 		if err = d.deployResource(c, ctx); err != nil {
-			return
+			return err
 		}
 
 		if s := ctx.String("stage"); s != "" {
 			d.log.Print("========== Stage Deployment ==========")
 			if err = d.deployStage(c, ctx); err != nil {
-				return
+				return err
 			}
 		}
 	default:
 		fmt.Println(d.Help())
 	}
+	return nil
 }
 
 // runHook runs deployment hook command
