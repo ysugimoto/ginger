@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"sync"
@@ -94,18 +95,21 @@ func (i *Install) Help() string {
 	return "No Help"
 }
 
-func (i *Install) Run(ctx *args.Context) {
+func (i *Install) Run(ctx *args.Context) error {
 	c := config.Load()
 	if !c.Exists() {
 		i.log.Error("Configuration file could not load. Run `ginger init` before.")
-		return
+		return errors.New("")
 	}
 
 	i.log.Print("Install function dependencies.")
 
 	if _, err := os.Stat(c.LibPath); err != nil {
 		i.log.Printf("Create library directory: %s\n", c.LibPath)
-		os.Mkdir(c.LibPath, 0755)
+		if err := os.Mkdir(c.LibPath, 0755); err != nil {
+			i.log.Error("Failed to create directory: " + c.LibPath)
+			return err
+		}
 	}
 
 	tmpDir, _ := ioutil.TempDir("", "ginger-tmp-packages")
@@ -114,7 +118,7 @@ func (i *Install) Run(ctx *args.Context) {
 	deps, err := findDependencyPackages(c.FunctionPath)
 	if err != nil {
 		i.log.Errorf("Find dependency error: %s\n", err.Error())
-		return
+		return err
 	}
 
 	for _, pkgs := range deps {
@@ -133,9 +137,11 @@ func (i *Install) Run(ctx *args.Context) {
 	// Recursive copy
 	if err := i.movePackages(tmpDir, c.LibPath); err != nil {
 		i.log.Error(err.Error())
+		return err
 	}
 
 	i.log.Info("Installed dependencies successfully.")
+	return nil
 }
 
 // installDependencies installs dependencies via "go get".

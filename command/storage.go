@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/ysugimoto/ginger/config"
@@ -47,11 +48,11 @@ Options:
 `
 }
 
-func (s *Storage) Run(ctx *args.Context) {
+func (s *Storage) Run(ctx *args.Context) error {
 	c := config.Load()
 	if !c.Exists() {
 		s.log.Error("Configuration file could not load. Run `ginger init` before.")
-		return
+		return errors.New("")
 	}
 	var err error
 	defer func() {
@@ -72,6 +73,7 @@ func (s *Storage) Run(ctx *args.Context) {
 	default:
 		fmt.Println(s.Help())
 	}
+	return err
 }
 
 // mountStorage makes integration between API Gateway resource and S3 storage

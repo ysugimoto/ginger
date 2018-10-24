@@ -28,8 +28,9 @@ func NewVersion() *Version {
 // ```
 //
 // <<< doc
-func (v *Version) Run(ctx *args.Context) {
+func (v *Version) Run(ctx *args.Context) error {
 	fmt.Println(v.Help())
+	return nil
 }
 
 func (v *Version) Help() string {

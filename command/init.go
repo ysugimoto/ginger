@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -97,30 +98,42 @@ func (i *Init) Help() string {
 // Destination AWS region which ginger create resources.
 //
 // <<< doc
-func (i *Init) Run(ctx *args.Context) {
+func (i *Init) Run(ctx *args.Context) error {
 	c := config.Load()
 	if c.Exists() {
 		i.log.Warn("Config file found. Project has already initialized.")
-		return
+		return errors.New("")
 	}
 	if _, err := os.Stat(c.FunctionPath); err != nil {
 		i.log.Printf("Create functions directory: %s\n", c.FunctionPath)
-		os.Mkdir(c.FunctionPath, 0755)
+		if err := os.Mkdir(c.FunctionPath, 0755); err != nil {
+			i.log.Error("Failed to create directory: " + c.FunctionPath)
+			return err
+		}
 		i.ensureKeepFile(c.FunctionPath)
 	}
 	if _, err := os.Stat(c.StoragePath); err != nil {
 		i.log.Printf("Create storage directory: %s\n", c.StoragePath)
-		os.Mkdir(c.StoragePath, 0755)
+		if err := os.Mkdir(c.StoragePath, 0755); err != nil {
+			i.log.Error("Failed to create directory: " + c.StoragePath)
+			return err
+		}
 		i.ensureKeepFile(c.StoragePath)
 	}
 	if _, err := os.Stat(c.StagePath); err != nil {
 		i.log.Printf("Create stages directory: %s\n", c.StagePath)
-		os.Mkdir(c.StagePath, 0755)
+		if err := os.Mkdir(c.StagePath, 0755); err != nil {
+			i.log.Error("Failed to create directory: " + c.StagePath)
+			return err
+		}
 		i.ensureKeepFile(c.StagePath)
 	}
 	if _, err := os.Stat(c.SchedulerPath); err != nil {
 		i.log.Printf("Create scheduler directory: %s\n", c.SchedulerPath)
-		os.Mkdir(c.SchedulerPath, 0755)
+		if err := os.Mkdir(c.SchedulerPath, 0755); err != nil {
+			i.log.Error("Failed to create directory: " + c.SchedulerPath)
+			return err
+		}
 		i.ensureKeepFile(c.SchedulerPath)
 	}
 
@@ -162,6 +175,7 @@ func (i *Init) Run(ctx *args.Context) {
 	c.Write()
 	NewInstall().Run(ctx)
 	i.log.Info("ginger initalized successfully!")
+	return nil
 }
 
 // Ensure .keep file and create if not exist

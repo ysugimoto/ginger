@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"github.com/ysugimoto/go-args"
 
 	"github.com/ysugimoto/ginger/config"
@@ -56,11 +57,11 @@ Options:
 // | --hook    | Deploy hook command                                                          |
 //
 // <<< doc
-func (c *Config) Run(ctx *args.Context) {
+func (c *Config) Run(ctx *args.Context) error {
 	conf := config.Load()
 	if !conf.Exists() {
 		c.log.Error("Configuration file could not load. Run `ginger init` before.")
-		return
+		return errors.New("")
 	}
 	defer conf.Write()
 
@@ -86,4 +87,5 @@ func (c *Config) Run(ctx *args.Context) {
 		c.log.Print("Set deploy hook command.")
 	}
 	c.log.Info("Configuration updated!")
+	return nil
 }

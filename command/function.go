@@ -3,6 +3,7 @@ package command
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -81,11 +82,11 @@ Options:
 }
 
 // Run the command.
-func (f *Function) Run(ctx *args.Context) {
+func (f *Function) Run(ctx *args.Context) error {
 	c := config.Load()
 	if !c.Exists() {
 		f.log.Error("Configuration file could not load. Run `ginger init` before.")
-		return
+		return errors.New("")
 	}
 	var err error
 	defer func() {
@@ -114,6 +115,7 @@ func (f *Function) Run(ctx *args.Context) {
 	default:
 		fmt.Println(f.Help())
 	}
+	return err
 }
 
 // createFunction creates new function in local.

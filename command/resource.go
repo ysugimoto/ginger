@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -66,11 +67,11 @@ Options:
 }
 
 // Run runs command with some options
-func (r *Resource) Run(ctx *args.Context) {
+func (r *Resource) Run(ctx *args.Context) error {
 	c := config.Load()
 	if !c.Exists() {
 		r.log.Error("Configuration file could not load. Run `ginger init` before.")
-		return
+		return errors.New("")
 	}
 
 	var err error
@@ -97,6 +98,7 @@ func (r *Resource) Run(ctx *args.Context) {
 	default:
 		fmt.Println(r.Help())
 	}
+	return err
 }
 
 // createEndpoint creates new resource by supplied path

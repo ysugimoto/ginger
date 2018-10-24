@@ -19,7 +19,7 @@ func NewHelp() *Help {
 	return &Help{}
 }
 
-func (h *Help) Run(ctx *args.Context) {
+func (h *Help) Run(ctx *args.Context) error {
 	if ctx.At(0) == "ale" {
 		file, _ := assets.Assets.Open("/ale")
 		b := new(bytes.Buffer)
@@ -29,6 +29,7 @@ func (h *Help) Run(ctx *args.Context) {
 	} else {
 		fmt.Println(h.Help())
 	}
+	return nil
 }
 
 func (h *Help) Help() string {
