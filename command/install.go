@@ -114,22 +114,24 @@ func (i *Install) Run(ctx *args.Context) error {
 
 	var tmpDir string
 	var err error
-	if os.Getenv("GINGER_TMP_DIR") != "" {
-		tmpDir = os.Getenv("GINGER_TMP_DIR")
-		var stat os.FileInfo
-		if stat, err = os.Stat(tmpDir); err != nil {
-			err = os.Mkdir(tmpDir, 0755)
-		} else if !stat.IsDir() {
-			err = errors.New(tmpDir + " is not a directory.")
+	if os.Getenv("GINGER_NO_TEMPDIR") == "" {
+		if os.Getenv("GINGER_TMP_DIR") != "" {
+			tmpDir = os.Getenv("GINGER_TMP_DIR")
+			var stat os.FileInfo
+			if stat, err = os.Stat(tmpDir); err != nil {
+				err = os.Mkdir(tmpDir, 0755)
+			} else if !stat.IsDir() {
+				err = errors.New(tmpDir + " is not a directory.")
+			}
+		} else {
+			tmpDir, err = ioutil.TempDir("", "ginger-tmp-packages")
 		}
-	} else {
-		tmpDir, err = ioutil.TempDir("", "ginger-tmp-packages")
+		if err != nil {
+			i.log.Error("Failed to create tmp dir: " + err.Error())
+			return err
+		}
+		defer os.RemoveAll(tmpDir)
 	}
-	if err != nil {
-		i.log.Error("Failed to create tmp dir: " + err.Error())
-		return err
-	}
-	defer os.RemoveAll(tmpDir)
 
 	deps, err := findDependencyPackages(c.FunctionPath)
 	if err != nil {
@@ -150,10 +152,12 @@ func (i *Install) Run(ctx *args.Context) error {
 		})
 		wg.Wait()
 	}
-	// Recursive copy
-	if err := i.movePackages(tmpDir, c.LibPath); err != nil {
-		i.log.Error(err.Error())
-		return err
+	// Recursive copy if packages installed temporary
+	if tmpDir != "" {
+		if err := i.movePackages(tmpDir, c.LibPath); err != nil {
+			i.log.Error(err.Error())
+			return err
+		}
 	}
 
 	i.log.Info("Installed dependencies successfully.")
@@ -180,9 +184,11 @@ func (i *Install) Run(ctx *args.Context) error {
 func (i *Install) installDependencies(pkg, tmpDir string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	cmd := exec.Command("go", "get", pkg)
-	cmd.Env = buildEnv(map[string]string{
-		"GOPATH": tmpDir,
-	})
+	if tmpDir != "" {
+		cmd.Env = buildEnv(map[string]string{
+			"GOPATH": tmpDir,
+		})
+	}
 	cmd.Run()
 }
 
