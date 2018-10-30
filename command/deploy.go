@@ -219,9 +219,16 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 		return nil
 	}
 
-	buildDir, err := ioutil.TempDir("", "ginger-builds")
-	if err != nil {
-		return exception(err.Error())
+	var buildDir string
+	var buildDirErr error
+	if os.Getenv("GINGER_TMP_DIR") != "" {
+		buildDir = os.Getenv("GINGER_TMP_DIR")
+		buildDirErr = os.Mkdir(buildDir, 0755)
+	} else {
+		buildDir, buildDirErr = ioutil.TempDir("", "ginger-builds")
+	}
+	if buildDirErr != nil {
+		return exception(buildDirErr.Error())
 	}
 	defer os.RemoveAll(buildDir)
 

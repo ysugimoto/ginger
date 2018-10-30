@@ -112,7 +112,18 @@ func (i *Install) Run(ctx *args.Context) error {
 		}
 	}
 
-	tmpDir, _ := ioutil.TempDir("", "ginger-tmp-packages")
+	var tmpDir string
+	var err error
+	if os.Getenv("GINGER_TMP_DIR") != "" {
+		tmpDir = os.Getenv("GINGER_TMP_DIR")
+		err = os.Mkdir(tmpDir, 0755)
+	} else {
+		tmpDir, err = ioutil.TempDir("", "ginger-tmp-packages")
+	}
+	if err != nil {
+		i.log.Error("Failed to create tmp dir: " + err.Error())
+		return err
+	}
 	defer os.RemoveAll(tmpDir)
 
 	deps, err := findDependencyPackages(c.FunctionPath)
