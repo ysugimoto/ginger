@@ -116,7 +116,12 @@ func (i *Install) Run(ctx *args.Context) error {
 	var err error
 	if os.Getenv("GINGER_TMP_DIR") != "" {
 		tmpDir = os.Getenv("GINGER_TMP_DIR")
-		err = os.Mkdir(tmpDir, 0755)
+		var stat os.FileInfo
+		if stat, err = os.Stat(tmpDir); err != nil {
+			err = os.Mkdir(tmpDir, 0755)
+		} else if !stat.IsDir() {
+			err = errors.New(tmpDir + " is not a directory.")
+		}
 	} else {
 		tmpDir, err = ioutil.TempDir("", "ginger-tmp-packages")
 	}
