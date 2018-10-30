@@ -223,7 +223,12 @@ func (d *Deploy) deployFunction(c *config.Config, ctx *args.Context) error {
 	var buildDirErr error
 	if os.Getenv("GINGER_TMP_DIR") != "" {
 		buildDir = os.Getenv("GINGER_TMP_DIR")
-		buildDirErr = os.Mkdir(buildDir, 0755)
+		var stat os.FileInfo
+		if stat, buildDirErr = os.Stat(buildDir); buildDirErr != nil {
+			buildDirErr = os.Mkdir(buildDir, 0755)
+		} else if !stat.IsDir() {
+			buildDirErr = errors.New(buildDir + " is not a directory.")
+		}
 	} else {
 		buildDir, buildDirErr = ioutil.TempDir("", "ginger-builds")
 	}
