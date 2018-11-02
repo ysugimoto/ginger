@@ -200,6 +200,10 @@ func (i *Install) movePackages(src, dest string) error {
 	for _, item := range items {
 		from := filepath.Join(src, item.Name())
 		to := filepath.Join(dest, item.Name())
+		if _, err := os.Stat(to); err == nil {
+			// File already exists
+			continue
+		}
 		if err := os.Rename(from, to); err != nil {
 			return exception("Failed to move file: %s => %s, %s", from, to, err.Error())
 		}
