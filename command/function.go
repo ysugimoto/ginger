@@ -39,6 +39,14 @@ const (
 	FUNCTIONLOG     = "log"
 )
 
+const (
+	eventNameAPIGateway = "API Gateway"
+	eventNameS3         = "S3"
+	eventNameCloudWatch = "CloudWatch Event"
+	eventNameSQS        = "SQS Event"
+	eventNameKinesis    = "Kinesis Event"
+)
+
 // Function is the struct of AWS Lambda function operation command.
 // This struct will be dispatched on "ginger fn/funtion" subcommand.
 // This command operates with above constant string.
@@ -157,10 +165,11 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	if event == "" {
 		event = input.Choice("What service will you handle?", []string{
 			"(None)",
-			"API Gateway",
-			"S3",
-			"CloudWatch Event",
-			"SQS Event",
+			eventNameAPIGateway,
+			eventNameS3,
+			eventNameCloudWatch,
+			eventNameSQS,
+			eventNameKinesis,
 		})
 	}
 
@@ -194,12 +203,13 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 
 	io.Copy(b, tmpl)
 	binds := []interface{}{}
+	camelName := strcase.ToCamel(name)
 
 	switch eventSource {
-	case "API Gateway":
+	case eventNameAPIGateway:
 		binds = append(binds,
 			"\n\t\"github.com/aws/aws-lambda-go/events\"",
-			strcase.ToCamel(name),
+			camelName,
 			"request events.APIGatewayProxyRequest",
 			"(events.APIGatewayProxyResponse, error)",
 			`events.APIGatewayProxyResponse{
@@ -207,43 +217,52 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 		Headers: map[string]string{"X-Ginger-Response": "succeed"},
 		Body: "Hello, ginger lambda!",
 	}, nil`,
-			strcase.ToCamel(name),
+			camelName,
 		)
-	case "S3":
+	case eventNameS3:
 		binds = append(binds,
 			"\n\t\"github.com/aws/aws-lambda-go/events\"",
-			strcase.ToCamel(name),
+			camelName,
 			"s3Event events.S3Event",
 			"error",
 			"nil",
-			strcase.ToCamel(name),
+			camelName,
 		)
-	case "CloudWatch Event":
+	case eventNameCloudWatch:
 		binds = append(binds,
 			"\n\t\"github.com/aws/aws-lambda-go/events\"",
-			strcase.ToCamel(name),
+			camelName,
 			"cloudWatchEvent events.CloudWatchEvent",
 			"error",
 			"nil",
-			strcase.ToCamel(name),
+			camelName,
 		)
-	case "SQS Event":
+	case eventNameSQS:
 		binds = append(binds,
 			"\n\t\"github.com/aws/aws-lambda-go/events\"",
-			strcase.ToCamel(name),
+			camelName,
 			"sqsEvent events.SQSEvent",
 			"error",
 			"nil",
-			strcase.ToCamel(name),
+			camelName,
+		)
+	case eventNameKinesis:
+		binds = append(binds,
+			"\n\t\"github.com/aws/aws-lambda-go/events\"",
+			camelName,
+			"kinesisEvent events.KinesisEvent",
+			"error",
+			"nil",
+			camelName,
 		)
 	default:
 		binds = append(binds,
 			"",
-			strcase.ToCamel(name),
+			camelName,
 			"input map[string]string",
 			"(map[string]string, error)",
 			"input, nil",
-			strcase.ToCamel(name),
+			camelName,
 		)
 	}
 	return []byte(fmt.Sprintf(b.String(), binds...))
