@@ -30,6 +30,7 @@ import (
 )
 
 const (
+	// Subcommands
 	FUNCTIONCREATE  = "create"
 	FUNCTIONDELETE  = "delete"
 	FUNCTIONINVOKE  = "invoke"
@@ -42,15 +43,18 @@ const (
 	FUNCTIONBUILD   = "build"
 	FUNCTIONTEST    = "test"
 	FUNCTIONRUN     = "run"
-)
 
-const (
+	// Event names
 	eventNameNone       = "(None)"
 	eventNameAPIGateway = "API Gateway"
 	eventNameS3         = "S3"
 	eventNameCloudWatch = "CloudWatch Event"
 	eventNameSQS        = "SQS Event"
 	eventNameKinesis    = "Kinesis Event"
+
+	// Event source filename
+	eventSourceFileName   = "event.json"
+	clientContextFileName = "context.json"
 )
 
 // Function is the struct of AWS Lambda function operation command.
@@ -199,12 +203,21 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	if err := os.Mkdir(fnPath, 0755); err != nil {
 		return exception("Couldn't create directory: %s", fnPath)
 	}
+	// Create main.go from template
 	if err := ioutil.WriteFile(
 		filepath.Join(c.FunctionPath, name, "main.go"),
 		f.buildTemplate(name, event),
 		0644,
 	); err != nil {
 		return exception("Create function error: %s", err.Error())
+	}
+	// Create event.json from template
+	if err := ioutil.WriteFile(
+		filepath.Join(c.FunctionPath, name, "event.json"),
+		f.buildEventJson(event),
+		0644,
+	); err != nil {
+		return exception("Create event.json error: %s", err.Error())
 	}
 
 	c.Queue[name] = fn
@@ -282,6 +295,27 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 		)
 	}
 	return []byte(fmt.Sprintf(b.String(), binds...))
+}
+
+// buildEventJson makes event.json for test from supplied arguments.
+func (f *Function) buildEventJson(eventSource string) []byte {
+	assetPath := "/events/default.json"
+	switch eventSource {
+	case eventNameAPIGateway:
+		assetPath = "/events/apigateway.json"
+	case eventNameS3:
+		assetPath = "/events/s3.json"
+	case eventNameCloudWatch:
+		assetPath = "/events/cloudwatch.json"
+	case eventNameSQS:
+		assetPath = "/events/sqs.json"
+	case eventNameKinesis:
+		assetPath = "/events/kinesis.json"
+	}
+	src, _ := assets.Assets.Open(assetPath)
+	b := new(bytes.Buffer)
+	io.Copy(b, src)
+	return b.Bytes()
 }
 
 // deleteFunction deletes function.
@@ -656,7 +690,18 @@ func (f *Function) testFunction(c *config.Config, ctx *args.Context) error {
 // ## Run function
 //
 // Run Lambda function locally.
-// The `--event` argument accepts event payload of JSON file. In default, use (function-directory)/event.json file if exists.
+// The `--event` argument accepts event payload of JSON file. In default, use (function-directory)/event.json file if exists. Or, you can use template JSON which corredspons to event source in ginger bundled following:
+//  - s3
+//  - apigateway
+//  - sqs
+//  - kinesis
+//  - cloudwatch
+// For example, you can run function with s3 event source as:
+//
+// ```
+// $ ginger fn run --name example-function --event s3
+// ```
+//
 // And, additional client context data also can provide. put (function-directory)/context.json and defined some JSON values.
 //
 // ```
@@ -685,7 +730,7 @@ func (f *Function) runFunction(c *config.Config, ctx *args.Context) error {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Step.1 Build binary and put to temprary directory
+	// Build binary and put to temprary directory
 	bin := filepath.Join(tmpDir, name)
 	if err := execGoCommand(context.Background(), c, name, "build", []string{"-o", bin}); err != nil {
 		return exception("Failed to build %s binary: %s ", name, err.Error())
@@ -694,6 +739,9 @@ func (f *Function) runFunction(c *config.Config, ctx *args.Context) error {
 	defer cancel()
 
 	// Start up Lambda RPC inside goroutine
+	// We run server by using built binary because `go run main.go` process cannot kill its process properly.
+	// The `go run main.go` makes temporary binary and run at `/var/folders/xxxxx/exe/main`,
+	// and if we kill process via cmd.Process.Kill(), then that process won't kill, so RPC process runs forever.
 	go func() {
 		f.log.Infof("Starting local %s Lambda...\n", name)
 		cmd := exec.CommandContext(parentCtx, bin)
@@ -709,23 +757,26 @@ func (f *Function) runFunction(c *config.Config, ctx *args.Context) error {
 	}()
 
 	// Factory source JSON
-	source := []byte(ctx.String("event"))
-	if len(source) == 0 {
-		// Or retrieve function directory's event.json
-		eventFile := filepath.Join(c.FunctionPath, name, "event.json")
+	source := []byte("{}")
+	event := ctx.String("event")
+	if event == "" {
+		// If event isn't supplied, try to retrieve function directory's event.json
+		eventFile := filepath.Join(c.FunctionPath, name, eventSourceFileName)
 		if _, err := os.Stat(eventFile); err == nil {
 			if buf, err := ioutil.ReadFile(eventFile); err == nil {
 				source = buf
 			}
 		}
-	}
-	if len(source) == 0 {
-		source = []byte("{}")
+	} else if src, err := assets.Assets.Open(fmt.Sprintf("/events/%s.json", event)); err == nil {
+		// If event supplied as "event template name", use template JSON from compiled assets
+		buf := new(bytes.Buffer)
+		io.Copy(buf, src)
+		source = buf.Bytes()
 	}
 
 	// Use context data if exsits
 	clientContext := []byte{}
-	contextFile := filepath.Join(c.FunctionPath, name, "context.json")
+	contextFile := filepath.Join(c.FunctionPath, name, clientContextFileName)
 	if _, err := os.Stat(contextFile); err == nil {
 		if buf, err := ioutil.ReadFile(contextFile); err == nil {
 			clientContext = buf
@@ -746,8 +797,9 @@ func (f *Function) runFunction(c *config.Config, ctx *args.Context) error {
 				f.log.Warnf("%s at line %d: %s\n", frame.Path, frame.Line, frame.Label)
 			}
 		}
-		return exception("Failed to invoke lambda function")
+		return exception("Failed to run lambda function")
+	} else if resp.Payload != nil {
+		f.log.Printf("payload received:\n%s\n", string(resp.Payload))
 	}
-	f.log.Printf("payload received:\n%s\n", string(resp.Payload))
 	return nil
 }

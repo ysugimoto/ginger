@@ -187,7 +187,18 @@ $ ginger function test [options]
 ## Run function
 
 Run Lambda function locally.
-The `--event` argument accepts event payload of JSON file. In default, use (function-directory)/event.json file if exists.
+The `--event` argument accepts event payload of JSON file. In default, use (function-directory)/event.json file if exists. Or, you can use template JSON which corredspons to event source in ginger bundled following:
+ - s3
+ - apigateway
+ - sqs
+ - kinesis
+ - cloudwatch
+For example, you can run function with s3 event source as:
+
+```
+$ ginger fn run --name example-function --event s3
+```
+
 And, additional client context data also can provide. put (function-directory)/context.json and defined some JSON values.
 
 ```
