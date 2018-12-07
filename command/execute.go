@@ -15,7 +15,7 @@ import (
 	"github.com/ysugimoto/ginger/config"
 )
 
-// Execula `go xxx` command with our context
+// Execute `go xxx` command with our context
 func execGoCommand(ctx context.Context, c *config.Config, name, subcommand string, arguments []string) error {
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
