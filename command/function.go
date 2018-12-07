@@ -9,8 +9,10 @@ import (
 	"os"
 	"strings"
 	"syscall"
+	"time"
 
 	"io/ioutil"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 
@@ -37,9 +39,13 @@ const (
 	FUNCTIONLIST    = "list"
 	FUNCTIONHELP    = "help"
 	FUNCTIONLOG     = "log"
+	FUNCTIONBUILD   = "build"
+	FUNCTIONTEST    = "test"
+	FUNCTIONRUN     = "run"
 )
 
 const (
+	eventNameNone       = "(None)"
 	eventNameAPIGateway = "API Gateway"
 	eventNameS3         = "S3"
 	eventNameCloudWatch = "CloudWatch Event"
@@ -78,6 +84,9 @@ Operation:
   deploy  : Deploy functions
   list    : List functions
   log     : Tail function log
+  build   : Build function
+  test    : Run unit test
+  run     : Run function on local
   help    : Show this help
 
 Options:
@@ -120,6 +129,12 @@ func (f *Function) Run(ctx *args.Context) error {
 		err = f.listFunction(c, ctx)
 	case FUNCTIONLOG:
 		err = f.logFunction(c, ctx)
+	case FUNCTIONBUILD:
+		err = f.buildFunction(c, ctx)
+	case FUNCTIONTEST:
+		err = f.testFunction(c, ctx)
+	case FUNCTIONRUN:
+		err = f.runFunction(c, ctx)
 	default:
 		fmt.Println(f.Help())
 	}
@@ -164,7 +179,7 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	event := ctx.String("event")
 	if event == "" {
 		event = input.Choice("What service will you handle?", []string{
-			"(None)",
+			eventNameNone,
 			eventNameAPIGateway,
 			eventNameS3,
 			eventNameCloudWatch,
@@ -174,10 +189,11 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 	}
 
 	fn := &entity.Function{
-		Name:       name,
-		MemorySize: int64(m),
-		Timeout:    int64(ctx.Int("timeout")),
-		Role:       c.DefaultLambdaRole,
+		Name:        name,
+		MemorySize:  int64(m),
+		Timeout:     int64(ctx.Int("timeout")),
+		Role:        c.DefaultLambdaRole,
+		Environment: make(map[string]*string),
 	}
 	fnPath := filepath.Join(c.FunctionPath, name)
 	if err := os.Mkdir(fnPath, 0755); err != nil {
@@ -479,7 +495,7 @@ func (f *Function) mountFunction(c *config.Config, ctx *args.Context) error {
 		name = c.ChooseFunction()
 	}
 	if _, err := c.LoadFunction(name); err != nil {
-		return exception("Function %s could't find in your project.", name)
+		return exception("Function %s couldn't find in your project.", name)
 	}
 
 	path := ctx.String("path")
@@ -567,5 +583,171 @@ func (f *Function) unmountFunction(c *config.Config, ctx *args.Context) error {
 		return exception("Undefined integration type.")
 	}
 	f.log.Infof("Function unmounted for resource %s.\n", path)
+	return nil
+}
+
+// buildFunction builds Lambda function from go source files to binary
+//
+// >>> doc
+//
+// ## Build function
+//
+// Build function binary for your runtime.
+//
+// ```
+// $ ginger function build [options]
+// ```
+//
+// | option   | description                                                      |
+// |:--------:|:-----------------------------------------------------------------|
+// | --name   | Target function name                                             |
+//
+// <<< doc
+func (f *Function) buildFunction(c *config.Config, ctx *args.Context) error {
+	name := ctx.String("name")
+	if name == "" {
+		name = c.ChooseFunction()
+	}
+	if _, err := c.LoadFunction(name); err != nil {
+		return exception("Function %s couldn't find in your project.", name)
+	}
+
+	arguments := []string{"-o", filepath.Join(c.FunctionPath, name, name)}
+	if err := execGoCommand(context.Background(), c, name, "build", arguments); err != nil {
+		return exception("Failed to build %s function: %s\n", name, err.Error())
+	}
+	f.log.Infof("Function %s built successfully.\n", name)
+	return nil
+}
+
+// testFunction run tests with ginger's environment
+//
+// >>> doc
+//
+// ## Test function
+//
+// Run test on project environment.
+//
+// ```
+// $ ginger function test [options]
+// ```
+//
+// | option   | description                                                      |
+// |:--------:|:-----------------------------------------------------------------|
+// | --name   | Target function name                                             |
+//
+// <<< doc
+func (f *Function) testFunction(c *config.Config, ctx *args.Context) error {
+	name := ctx.String("name")
+	if name == "" {
+		name = c.ChooseFunction()
+	}
+	if _, err := c.LoadFunction(name); err != nil {
+		return exception("Function %s couldn't find in your project.", name)
+	}
+
+	return execGoCommand(context.Background(), c, name, "test", nil)
+}
+
+// runFunction invokes lambda function locally
+//
+// >>> doc
+//
+// ## Run function
+//
+// Run Lambda function locally.
+// The `--event` argument accepts event payload of JSON file. In default, use (function-directory)/event.json file if exists.
+// And, additional client context data also can provide. put (function-directory)/context.json and defined some JSON values.
+//
+// ```
+// $ ginger function run [options]
+// ```
+//
+// | option   | description                                                      |
+// |:--------:|:-----------------------------------------------------------------|
+// | --name   | Target function name                                             |
+// | --event  | Event payload JSON file path                                     |
+//
+// <<< doc
+func (f *Function) runFunction(c *config.Config, ctx *args.Context) error {
+	name := ctx.String("name")
+	if name == "" {
+		name = c.ChooseFunction()
+	}
+	fn, err := c.LoadFunction(name)
+	if err != nil {
+		return exception("Function %s couldn't find in your project.", name)
+	}
+
+	tmpDir, err := ioutil.TempDir("", "ginger-local-invoke")
+	if err != nil {
+		return exception("Failed to create temporary directory: %s", err.Error())
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Step.1 Build binary and put to temprary directory
+	bin := filepath.Join(tmpDir, name)
+	if err := execGoCommand(context.Background(), c, name, "build", []string{"-o", bin}); err != nil {
+		return exception("Failed to build %s binary: %s ", name, err.Error())
+	}
+	parentCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Start up Lambda RPC inside goroutine
+	go func() {
+		f.log.Infof("Starting local %s Lambda...\n", name)
+		cmd := exec.CommandContext(parentCtx, bin)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Env = buildEnv(map[string]string{
+			"_LAMBDA_SERVER_PORT": LAMBDARPCPORT,
+		})
+		if err := cmd.Run(); err != nil {
+			fmt.Println(err)
+		}
+		f.log.Infof("Shutting down local %s Lambda...\n", name)
+	}()
+
+	// Factory source JSON
+	source := []byte(ctx.String("event"))
+	if len(source) == 0 {
+		// Or retrieve function directory's event.json
+		eventFile := filepath.Join(c.FunctionPath, name, "event.json")
+		if _, err := os.Stat(eventFile); err == nil {
+			if buf, err := ioutil.ReadFile(eventFile); err == nil {
+				source = buf
+			}
+		}
+	}
+	if len(source) == 0 {
+		source = []byte("{}")
+	}
+
+	// Use context data if exsits
+	clientContext := []byte{}
+	contextFile := filepath.Join(c.FunctionPath, name, "context.json")
+	if _, err := os.Stat(contextFile); err == nil {
+		if buf, err := ioutil.ReadFile(contextFile); err == nil {
+			clientContext = buf
+		}
+	}
+
+	// Wait until lambda RPC server has been started (maybe a second is enough)
+	time.Sleep(1 * time.Second)
+	resp, err := execLambdaRPC(fn.Timeout, source, clientContext)
+	if err != nil {
+		return exception("Failed to call Lambda RPC: %s", err.Error())
+	}
+	if resp.Error != nil {
+		f.log.Errorf("Lambda responded error:\nType: %s\nMessage: %s\n", resp.Error.Type, resp.Error.Message)
+		if len(resp.Error.StackTrace) > 0 {
+			f.log.Warn("StackTrace")
+			for _, frame := range resp.Error.StackTrace {
+				f.log.Warnf("%s at line %d: %s\n", frame.Path, frame.Line, frame.Label)
+			}
+		}
+		return exception("Failed to invoke lambda function")
+	}
+	f.log.Printf("payload received:\n%s\n", string(resp.Payload))
 	return nil
 }

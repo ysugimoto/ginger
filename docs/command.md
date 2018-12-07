@@ -158,6 +158,48 @@ $ ginger function unmount [options]
 | --method | Integration method                                               |
 
 
+## Build function
+
+Build function binary for your runtime.
+
+```
+$ ginger function build [options]
+```
+
+| option   | description                                                      |
+|:--------:|:-----------------------------------------------------------------|
+| --name   | Target function name                                             |
+
+
+## Test function
+
+Run test on project environment.
+
+```
+$ ginger function test [options]
+```
+
+| option   | description                                                      |
+|:--------:|:-----------------------------------------------------------------|
+| --name   | Target function name                                             |
+
+
+## Run function
+
+Run Lambda function locally.
+The `--event` argument accepts event payload of JSON file. In default, use (function-directory)/event.json file if exists.
+And, additional client context data also can provide. put (function-directory)/context.json and defined some JSON values.
+
+```
+$ ginger function run [options]
+```
+
+| option   | description                                                      |
+|:--------:|:-----------------------------------------------------------------|
+| --name   | Target function name                                             |
+| --event  | Event payload JSON file path                                     |
+
+
 ## Install dependencies
 
 Install dependency packages for build lambda function.

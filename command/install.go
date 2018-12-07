@@ -1,6 +1,7 @@
 package command
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"strings"
@@ -8,7 +9,6 @@ import (
 
 	"go/parser"
 	"go/token"
-	"io/ioutil"
 	"os/exec"
 	"path/filepath"
 
@@ -29,13 +29,13 @@ func findDependencyPackages(root string) ([]*strset.Set, error) {
 
 	// aws-lamda-go is required as default
 	packages := []*strset.Set{
-		strset.New("github.com/aws/aws-lambda-go"),
+		strset.New("github.com/aws/aws-lambda-go/lambda"),
 		strset.New(),
 		strset.New(),
 		strset.New(),
 	}
 
-	// Parse impopr section and add to set
+	// Parse import section and add to set
 	for _, f := range files {
 		t := token.NewFileSet()
 		ast, err := parser.ParseFile(t, f, nil, parser.ImportsOnly)
@@ -112,55 +112,41 @@ func (i *Install) Run(ctx *args.Context) error {
 		}
 	}
 
-	var tmpDir string
-	var err error
-	if os.Getenv("GINGER_NO_TEMPDIR") == "" {
-		if os.Getenv("GINGER_TMP_DIR") != "" {
-			tmpDir = os.Getenv("GINGER_TMP_DIR")
-			var stat os.FileInfo
-			if stat, err = os.Stat(tmpDir); err != nil {
-				err = os.Mkdir(tmpDir, 0755)
-			} else if !stat.IsDir() {
-				err = errors.New(tmpDir + " is not a directory.")
-			}
-		} else {
-			tmpDir, err = ioutil.TempDir("", "ginger-tmp-packages")
-		}
-		if err != nil {
-			i.log.Error("Failed to create tmp dir: " + err.Error())
-			return err
-		}
-		defer os.RemoveAll(tmpDir)
-	}
-
 	deps, err := findDependencyPackages(c.FunctionPath)
 	if err != nil {
 		i.log.Errorf("Find dependency error: %s\n", err.Error())
 		return err
 	}
 
+	errList := make([]string, 0)
 	for _, pkgs := range deps {
 		var wg sync.WaitGroup
+		errChan := make(chan error, pkgs.Size())
 		pkgs.Each(func(item string) bool {
-			if _, err := os.Stat(filepath.Join(c.LibPath, "src", item)); err == nil {
-				return true
-			}
 			wg.Add(1)
 			i.log.Printf("Installing/Resolving %s...\n", item)
-			go i.installDependencies(item, tmpDir, &wg)
+			go func() {
+				defer wg.Done()
+				if err := i.installDependencies(item, c.LibPath); err != nil {
+					errChan <- err
+				}
+			}()
 			return true
 		})
-		wg.Wait()
-	}
-	// Recursive copy if packages installed temporary
-	if tmpDir != "" {
-		if err := i.movePackages(tmpDir, c.LibPath); err != nil {
-			i.log.Error(err.Error())
-			return err
+		go func() {
+			wg.Wait()
+			close(errChan)
+		}()
+		for err := range errChan {
+			errList = append(errList, err.Error())
 		}
 	}
 
-	i.log.Info("Installed dependencies successfully.")
+	if len(errList) > 0 {
+		i.log.Errorf("Failed to install some packages:\n%s\n", strings.Join(errList, "\n"))
+		return errors.New("")
+	}
+	i.log.Info("Dependencies installed successfully.")
 	return nil
 }
 
@@ -181,28 +167,18 @@ func (i *Install) Run(ctx *args.Context) error {
 // ginger detects imports from your *.go file and install inside `.ginger` directory.
 //
 // <<< doc
-func (i *Install) installDependencies(pkg, tmpDir string, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (i *Install) installDependencies(pkg, tmpDir string) error {
+	buffer := new(bytes.Buffer)
 	cmd := exec.Command("go", "get", pkg)
 	if tmpDir != "" {
 		cmd.Env = buildEnv(map[string]string{
 			"GOPATH": tmpDir,
 		})
 	}
-	cmd.Run()
-}
-
-func (i *Install) movePackages(src, dest string) error {
-	items, err := ioutil.ReadDir(src)
-	if err != nil {
-		return exception("Failed to read directory: %s", src)
-	}
-	for _, item := range items {
-		from := filepath.Join(src, item.Name())
-		to := filepath.Join(dest, item.Name())
-		if err := os.Rename(from, to); err != nil {
-			return exception("Failed to move file: %s => %s, %s", from, to, err.Error())
-		}
+	cmd.Stdout = buffer
+	cmd.Stderr = buffer
+	if err := cmd.Run(); err != nil {
+		return errors.New(string(buffer.Bytes()))
 	}
 	return nil
 }

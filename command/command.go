@@ -34,6 +34,8 @@ const (
 	SC        = "sc" // alias for schedule
 )
 
+const LAMBDARPCPORT = "6666"
+
 // Command is the interface implemented by structs that can run the command
 // and show help as usage.
 type Command interface {
