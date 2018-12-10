@@ -51,7 +51,7 @@ func execLambdaRPC(timeout int64, source, clientContext []byte) (*messages.Invok
 		Payload:   source,
 		RequestId: fmt.Sprintf("ginger-invoke-%d", time.Now().Unix()),
 		Deadline: messages.InvokeRequest_Timestamp{
-			Seconds: timeout,
+			Seconds: time.Now().UTC().Unix() + timeout,
 			Nanos:   0,
 		},
 		ClientContext: clientContext,
