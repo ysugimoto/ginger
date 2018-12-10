@@ -750,6 +750,10 @@ func (f *Function) runFunction(c *config.Config, ctx *args.Context) error {
 		cmd.Env = buildEnv(map[string]string{
 			"_LAMBDA_SERVER_PORT": LAMBDARPCPORT,
 		})
+		// Append function specific environments
+		for k, v := range fn.Environment {
+			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, *v))
+		}
 		if err := cmd.Run(); err != nil {
 			fmt.Println(err)
 		}
