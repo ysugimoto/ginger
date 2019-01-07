@@ -47,6 +47,7 @@ const (
 	// Event names
 	eventNameNone       = "(None)"
 	eventNameAPIGateway = "API Gateway"
+	eventNameALB        = "ALB Target Group"
 	eventNameS3         = "S3"
 	eventNameCloudWatch = "CloudWatch Event"
 	eventNameSQS        = "SQS Event"
@@ -186,6 +187,7 @@ func (f *Function) createFunction(c *config.Config, ctx *args.Context) error {
 			eventNameNone,
 			eventNameAPIGateway,
 			eventNameS3,
+			eventNameALB,
 			eventNameCloudWatch,
 			eventNameSQS,
 			eventNameKinesis,
@@ -248,6 +250,20 @@ func (f *Function) buildTemplate(name, eventSource string) []byte {
 	}, nil`,
 			camelName,
 		)
+	case eventNameALB:
+		binds = append(binds,
+			"\n\t\"github.com/aws/aws-lambda-go/events\"",
+			camelName,
+			"request events.ALBTargetGroupRequest",
+			"(events.ALBTargetGroupResponse, error)",
+			`events.ALBTargetGroupResponse{
+		StatusCode: 200,
+		StatusDescription: "200 OK",
+		Headers: map[string]string{"X-Ginger-Response": "succeed"},
+		Body: "Hello, ginger lambda!",
+	}, nil`,
+			camelName,
+		)
 	case eventNameS3:
 		binds = append(binds,
 			"\n\t\"github.com/aws/aws-lambda-go/events\"",
@@ -303,6 +319,8 @@ func (f *Function) buildEventJson(eventSource string) []byte {
 	switch eventSource {
 	case eventNameAPIGateway:
 		assetPath = "/events/apigateway.json"
+	case eventNameALB:
+		assetPath = "/events/alb.json"
 	case eventNameS3:
 		assetPath = "/events/s3.json"
 	case eventNameCloudWatch:
