@@ -4,14 +4,14 @@
 [[projects]]
   name = "github.com/BurntSushi/toml"
   packages = ["."]
-  revision = "b26d9c308763d68093482582cea63d69be07a0f0"
-  version = "v0.3.0"
+  revision = "3012a1dbe2e4bd1391d42b32f0577cb7bbc7f005"
+  version = "v0.3.1"
 
 [[projects]]
   name = "github.com/aws/aws-lambda-go"
   packages = ["lambda/messages"]
-  revision = "9e3676ee8ca83aee500682f382e10b9d03660093"
-  version = "v1.8.0"
+  revision = "928161204cad89472f9e6b5dd49ce16bc91230de"
+  version = "v1.8.1"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
@@ -25,16 +25,24 @@
     "aws/credentials",
     "aws/credentials/ec2rolecreds",
     "aws/credentials/endpointcreds",
+    "aws/credentials/processcreds",
     "aws/credentials/stscreds",
+    "aws/csm",
     "aws/defaults",
     "aws/ec2metadata",
     "aws/endpoints",
     "aws/request",
     "aws/session",
     "aws/signer/v4",
+    "internal/ini",
+    "internal/s3err",
+    "internal/sdkio",
     "internal/sdkrand",
+    "internal/sdkuri",
     "internal/shareddefaults",
     "private/protocol",
+    "private/protocol/eventstream",
+    "private/protocol/eventstream/eventstreamapi",
     "private/protocol/json/jsonutil",
     "private/protocol/jsonrpc",
     "private/protocol/query",
@@ -50,20 +58,14 @@
     "service/s3",
     "service/sts"
   ]
-  revision = "a580f1a44c64e950056e5151797c35c65ab3cb4b"
-  version = "v1.13.9"
-
-[[projects]]
-  name = "github.com/go-ini/ini"
-  packages = ["."]
-  revision = "32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a"
-  version = "v1.32.0"
+  revision = "62936e15518acb527a1a9cb4a39d96d94d0fd9a2"
+  version = "v1.16.15"
 
 [[projects]]
   branch = "master"
   name = "github.com/iancoleman/strcase"
   packages = ["."]
-  revision = "3de563c3dc08a7504131e9d63f678b7d1c3e85d7"
+  revision = "3605ed457bf7f8caa1371b4fafadadc026673479"
 
 [[projects]]
   branch = "master"
@@ -74,7 +76,7 @@
 [[projects]]
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
-  revision = "0b12d6b5"
+  revision = "c2b33e84"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -85,38 +87,38 @@
 [[projects]]
   name = "github.com/mattn/go-isatty"
   packages = ["."]
-  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
-  version = "v0.0.3"
+  revision = "6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c"
+  version = "v0.0.4"
 
 [[projects]]
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
-  revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
-  version = "v0.0.2"
+  revision = "3ee7d812e62a0804a7d0a324e0249ca2db3476d3"
+  version = "v0.0.4"
 
 [[projects]]
   branch = "master"
   name = "github.com/mattn/go-tty"
   packages = ["."]
-  revision = "931426f7535ac39720c8909d70ece5a41a2502a6"
+  revision = "e4f871175a2f903ed2e6353334fdccb507c1d09e"
 
 [[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
-  version = "v0.8.0"
+  revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
+  version = "v0.8.1"
 
 [[projects]]
   name = "github.com/scylladb/go-set"
   packages = ["strset"]
-  revision = "be531f0d9b5775179975bcf126cb193921895b7b"
-  version = "v1.0.0"
+  revision = "e560bb8f49bb7f34d4f59b7e771f6e1307c329da"
+  version = "v1.0.2"
 
 [[projects]]
   branch = "master"
   name = "github.com/ysugimoto/cho"
   packages = ["."]
-  revision = "632f8dafec3b37756dc65a828d5bdf2d88523870"
+  revision = "faa6622cd87f5a9d1403abb1947f5699414fc7a8"
 
 [[projects]]
   branch = "master"
@@ -128,7 +130,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "dd2ff4accc098aceecb86b36eaa7829b2a17b1c9"
+  revision = "20be8e55dc7b4b7a1b1660728164a8509d8c9209"
 
 [solve-meta]
   analyzer-name = "dep"
