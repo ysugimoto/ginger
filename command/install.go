@@ -28,9 +28,9 @@ func findDependencyPackages(root string) ([]*strset.Set, error) {
 	}
 
 	// aws-lamda-go is required as default
+	// Usually 3 depth is enough
 	packages := []*strset.Set{
 		strset.New("github.com/aws/aws-lambda-go/lambda"),
-		strset.New(),
 		strset.New(),
 		strset.New(),
 	}
@@ -52,6 +52,10 @@ func findDependencyPackages(root string) ([]*strset.Set, error) {
 			level := len(strings.Split(pkg, "/")) - 3
 			if level < 0 {
 				continue
+			}
+			// Expand slice if depth is not enough
+			for len(packages)-1 < level {
+				packages = append(packages, strset.New())
 			}
 			packages[level].Add(pkg)
 		}
