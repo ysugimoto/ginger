@@ -49,10 +49,7 @@ func findDependencyPackages(root string) ([]*strset.Set, error) {
 				continue
 			}
 			// Get import path depth
-			level := len(strings.Split(pkg, "/")) - 3
-			if level < 0 {
-				continue
-			}
+			level := len(strings.Split(pkg, "/")) - 1
 			// Expand slice if depth is not enough
 			for len(packages)-1 < level {
 				packages = append(packages, strset.New())
