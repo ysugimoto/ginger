@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"strings"
-	"sync"
 
 	"go/parser"
 	"go/token"
@@ -119,34 +118,17 @@ func (i *Install) Run(ctx *args.Context) error {
 		return err
 	}
 
-	errList := make([]string, 0)
 	for _, pkgs := range deps {
-		var wg sync.WaitGroup
-		errChan := make(chan error, pkgs.Size())
 		pkgs.Each(func(item string) bool {
-			wg.Add(1)
 			i.log.Printf("Installing/Resolving %s...\n", item)
-			go func() {
-				defer wg.Done()
-				if err := i.installDependencies(item, c.LibPath); err != nil {
-					errChan <- err
-				}
-			}()
+			if err := i.installDependencies(item, c.LibPath); err != nil {
+				i.log.Errorf("Failed to install package: %s, %s\n", item, err.Error())
+				return false
+			}
 			return true
 		})
-		go func() {
-			wg.Wait()
-			close(errChan)
-		}()
-		for err := range errChan {
-			errList = append(errList, err.Error())
-		}
 	}
 
-	if len(errList) > 0 {
-		i.log.Errorf("Failed to install some packages:\n%s\n", strings.Join(errList, "\n"))
-		return errors.New("")
-	}
 	i.log.Info("Dependencies installed successfully.")
 	return nil
 }
