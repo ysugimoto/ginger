@@ -30,6 +30,7 @@ func main() {
 		Alias("directory", "d", "").
 		Alias("delete", "", nil).
 		Alias("message", "", "").
+		Alias("update", "u", nil).
 		Parse(os.Args[1:])
 
 	var cmd command.Command

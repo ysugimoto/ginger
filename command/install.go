@@ -121,7 +121,7 @@ func (i *Install) Run(ctx *args.Context) error {
 	for _, pkgs := range deps {
 		pkgs.Each(func(item string) bool {
 			i.log.Printf("Installing/Resolving %s...\n", item)
-			if err := i.installDependencies(item, c.LibPath); err != nil {
+			if err := i.installDependencies(item, c.LibPath, ctx.Has("update")); err != nil {
 				i.log.Errorf("Failed to install package: %s, %s\n", item, err.Error())
 				return false
 			}
@@ -150,9 +150,16 @@ func (i *Install) Run(ctx *args.Context) error {
 // ginger detects imports from your *.go file and install inside `.ginger` directory.
 //
 // <<< doc
-func (i *Install) installDependencies(pkg, tmpDir string) error {
+func (i *Install) installDependencies(pkg, tmpDir string, isUpdate bool) error {
 	buffer := new(bytes.Buffer)
-	cmd := exec.Command("go", "get", pkg)
+	var cmdArgs []string
+	if isUpdate {
+		cmdArgs = []string{"get", "-u", pkg}
+	} else {
+		cmdArgs = []string{"get", pkg}
+	}
+
+	cmd := exec.Command("go", cmdArgs...)
 	if tmpDir != "" {
 		cmd.Env = buildEnv(map[string]string{
 			"GOPATH": tmpDir,
