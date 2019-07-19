@@ -34,6 +34,7 @@ type Config struct {
 	S3BucketName      string             `toml:"s3_bucket_name"`
 	DeployHookCommand string             `toml:"deploy_hook_command"`
 	Resources         []*entity.Resource `toml:"resources"`
+	LocalPackages     []string           `toml:"local_packages"`
 
 	Queue map[string]*entity.Function `toml:"-"`
 	log   *logger.Logger              `toml:"-"`

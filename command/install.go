@@ -20,7 +20,7 @@ import (
 
 // findDependencyPackages finds import packages in your lambda functions.
 // walk functions directory recursively, and add to set.
-func findDependencyPackages(root string) ([]*strset.Set, error) {
+func findDependencyPackages(root string, localPackages []string) ([]*strset.Set, error) {
 	files, err := listFunctionScriptFiles(root)
 	if err != nil {
 		return nil, err
@@ -45,6 +45,16 @@ func findDependencyPackages(root string) ([]*strset.Set, error) {
 			// Import path value also contains double quotes, so we trim them
 			pkg := strings.Trim(i.Path.Value, `"`)
 			if !strings.Contains(pkg, ".") {
+				continue
+			}
+			var ignored bool
+			for _, v := range localPackages {
+				if strings.HasPrefix(pkg, v) {
+					ignored = true
+					break
+				}
+			}
+			if ignored {
 				continue
 			}
 			// Get import path depth
@@ -112,7 +122,12 @@ func (i *Install) Run(ctx *args.Context) error {
 		}
 	}
 
-	deps, err := findDependencyPackages(c.FunctionPath)
+	var localPackages []string
+	if c.LocalPackages != nil {
+		localPackages = c.LocalPackages
+	}
+
+	deps, err := findDependencyPackages(c.FunctionPath, localPackages)
 	if err != nil {
 		i.log.Errorf("Find dependency error: %s\n", err.Error())
 		return err
@@ -129,7 +144,19 @@ func (i *Install) Run(ctx *args.Context) error {
 		})
 	}
 
-	i.log.Info("Dependencies installed successfully.")
+	// Remove local packages if exists
+	for _, lpkg := range localPackages {
+		lpkgPath := filepath.Join(c.LibPath, "src", lpkg)
+		if _, err := os.Stat(lpkgPath); err != nil {
+			continue
+		}
+		i.log.Printf("Removing local package %s...\n", lpkg)
+		if err := os.RemoveAll(lpkgPath); err != nil {
+			i.log.Errorf("Failed to remove local package: %s, %s\n", lpkg, err.Error())
+		}
+	}
+
+	i.log.Info("Dependencies resolved successfully.")
 	return nil
 }
 
